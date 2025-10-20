@@ -1,61 +1,60 @@
 ### Differential drive
 
-Differential Drive on kahdella pyörällä toimiva robotiikan liikkumismekanismi, jossa robottia ohjataan säätämällä pyörien pyörimisnopeuksia. Toinen pyörä voi pyöriä nopeammin, hitaammin tai jopa vastakkaiseen suuntaan kuin toinen, mikä mahdollistaa robotin suunnanmuutokset ja paikoillaan kääntymisen.
+Differential Drive is a two-wheeled robotic locomotion mechanism where the robot is controlled by adjusting the rotational speeds of the wheels. One wheel can rotate faster, slower, or even in the opposite direction than the other, which allows the robot to change direction and turn in place.
 
-Differential Drive on yksinkertainen ja tehokas mekanismi, joka ohjaa robotin liikettä kahden pyörän nopeus- ja suuntaerojen avulla. Se on suosittu ratkaisu erityisesti ROS-järjestelmässä, jossa ``cmd_vel``-topicin avulla määritellään robotin lineaarinen- ja kulmanopeus käyttämällä viestityyppiä ``geometry_msgs/msg/Twist``. Tämä viestityyppi on standardoitu liikkuville roboteille, erityisesti differential drive -järjestelmiä varten.
+Differential Drive is a simple and effective mechanism that controls the robot's movement using the speed and direction differences of two wheels. It is a popular solution especially in the ROS system, where the `cmd_vel` topic is used to define the robot's linear and angular velocity using the message type `geometry_msgs/msg/Twist`. This message type is standardized for mobile robots, especially for differential drive systems.
 
-``geometry_msgs/msg/Twist`` viestityyppi sisältää kaksi vektorikenttää:
+The `geometry_msgs/msg/Twist` message type contains two vector fields:
 
-- linear: Kuvaa lineaarista nopeutta (m/s) kaikilla kolmella akselilla (x, y, z).
-- angular: Kuvaa kulmanopeutta (rad/s) kaikilla kolmella akselilla (x, y, z).
+- linear: Describes linear velocity (m/s) on all three axes (x, y, z).
+- angular: Describes angular velocity (rad/s) on all three axes (x, y, z).
 
-Differential Drive -roboteille merkittävät komponentit ovat:
+For Differential Drive robots, the significant components are:
 
-- linear.x: Lineaarinen nopeus eteenpäin (positiivinen) tai taaksepäin (negatiivinen).
-- angular.z: Kulmanopeus robottia ympäröivän pystyakselin ympäri.
+- linear.x: Linear velocity forward (positive) or backward (negative).
+- angular.z: Angular velocity around the vertical axis surrounding the robot.
 
-Muut komponentit (linear.y, linear.z, angular.x, ja angular.y) eivät yleensä ole käytössä 2D-ympäristössä.
+Other components (linear.y, linear.z, angular.x, and angular.y) are generally not used in a 2D environment.
 
-Kun ``cmd_vel`` -topic hallitsee robotin nopeuksia, ``odom`` -topic tarjoaa tietoa robotin todellisesta sijainnista ja orientaatiosta. Odometry-laskenta julkaisee nämä tiedot ``odom`` -topicissa, mikä mahdollistaa robotin sijainnin seuraamisen reaaliaikaisesti.
+While the `cmd_vel` topic controls the robot's speeds, the `odom` topic provides information about the robot's actual position and orientation. Odometry calculation publishes this information on the `odom` topic, allowing real-time tracking of the robot's position.
 
 ### Odometry
 
-``/odom``-topic: Tämä julkaisee tietoa robotin sijainnista ja orientaatiosta suhteessa alkuperäiseen lähtöpisteeseen.
+`/odom`-topic: This publishes information about the robot's position and orientation relative to the original starting point.
 
-Odometriikan laskenta perustuu tässä tapauksessa pelkästään moottoreiden enkoodereiden tuottamaan tietoon. On tärkeää huomioida, että tämä menetelmä ei ole täysin tarkka, sillä renkaiden ja alustan välinen vuorovaikutus, kuten liukuminen ja kitka, aiheuttaa väistämättä virheitä sijainnin ja liikkeen arvioinnissa. Vaikka tämä laskentamenetelmä ei takaa täydellistä tarkkuutta, se tarjoaa kuitenkin luotettavan perustan robotin sijainnin ja liikkeen seuraamiselle. Koska tässä esimerkissä muita antureita ei ole käytössä, enkooderipohjainen odometriikka on robotin ainoa käytettävissä oleva navigointimenetelmä.
+Odometry calculation in this case is based solely on the information produced by the motor encoders. It is important to note that this method is not completely accurate, as the interaction between the wheels and the ground, such as slippage and friction, inevitably causes errors in estimating position and movement. Although this calculation method does not guarantee perfect accuracy, it still provides a reliable basis for tracking the robot's position and movement. Since no other sensors are used in this example, encoder-based odometry is the robot's only available navigation method.
 
-#### Odometry-laskennan toiminta lyhyesti
+#### How Odometry Calculation Works in Short
 
-Odometry-laskenta perustuu robotin pyörien liikkeiden mittaamiseen ja näiden tietojen hyödyntämiseen robotin sijainnin ja orientaation (x, y, θ) määrittämiseksi ajan kuluessa.
+Odometry calculation is based on measuring the movements of the robot's wheels and utilizing this information to determine the robot's position and orientation (x, y, θ) over time.
 
-- Pyörän liikkuma matka saadaan kun tiedetään pyörän halkaisija ja enkooderin lukema yhdeltä kierrokselta.
-- Ero vasemman ja oikean pyörän liikkeessä: Lasketaan vasemman ja oikean pyörän kulkema matka.
-Pyörien välinen ero määrittää robotin kääntymisen ja suuntamuutoksen.
+- The distance traveled by the wheel is obtained when the wheel diameter and the encoder reading for one revolution are known.
+- Difference in movement between the left and right wheels: Calculate the distance traveled by the left and right wheels. The difference between the wheels determines the robot's turning and change of direction.
 
-**Renkaat**
+**Wheels**
 
-Renkaan säteellä ja renkaiden välisellä etäisyydellä on merkittävä vaikutus differential drive -robotin liikkeeseen ja ohjaukseen. Ne vaikuttavat suoraan robotin liikeradan, nopeuden ja kulmanopeuden laskentaan.
+The wheel radius and the distance between the wheels have a significant impact on the movement and control of a differential drive robot. They directly affect the calculation of the robot's trajectory, speed, and angular velocity.
 
-Oheisessa kuvassa havainnollistetaan, miten renkaiden koko ja niiden välinen etäisyys vaikuttavat robotin liikkeeseen, kun toinen rengas liikkuu tietyllä nopeudella ja toinen pysyy paikallaan. Eli esim. ajetaan moottoria 3 s nopeudella 0,1 m/s.
+The image below illustrates how the size of the wheels and the distance between them affect the robot's movement when one wheel moves at a certain speed and the other remains stationary. For example, the motor is driven for 3 seconds at a speed of 0.1 m/s.
 
-![kääntösäde](kuvat/turnradius.png)
+![turning radius](kuvat/turnradius.png)
 
-- Renkaan koko:
-	- Pienempi rengas liikkuu lyhyemmän matkan yhdellä kierroksella.
-	- Suurempi rengas liikkuu pidemmän matkan samalla kierrosmäärällä.
-- Renkaiden välinen etäisyys:
-	- Lyhyt etäisyys: Tuottaa jyrkemmän käännöksen, koska kaaren säde pienenee.
-	- Pitkä etäisyys: Tekee käännöksestä loivemman, koska suurempi etäisyys vaatii pidemmän matkan kaaren muodostumiseksi.
-- Liikuttua matkaa laskettaessa:
-	- Kuljettu matka riippuu renkaan koosta ja kääntösäteestä:
-		- Pienempi rengas + lyhyt etäisyys → lyhyt matka ja tiukka kaarre.
-		- Suurempi rengas + pitkä etäisyys → pitkä matka ja loiva kaarre.
+- Wheel size:
+  - A smaller wheel travels a shorter distance in one revolution.
+  - A larger wheel travels a longer distance in the same number of revolutions.
+- Distance between wheels:
+  - Short distance: Produces a sharper turn, as the radius of the arc decreases.
+  - Long distance: Makes the turn shallower, as a greater distance requires a longer arc to form.
+- When calculating the distance traveled:
+  - The distance traveled depends on the wheel size and turning radius:
+    - Smaller wheel + short distance → short travel and tight curve.
+    - Larger wheel + long distance → long travel and shallow curve.
 
-**Encoder luokka**
+**Encoder Class**
 
-Luodaan Pythonilla apuluokka Encoder, joka vastaa enkooderien lukemien hallinnasta ja laskennasta. Useimmissa enkoodereissa lukema nollautuu maksimilukeman jälkeen, jolloin kierrokset alkavat alusta. Tämä luokka pitää tarkasti kirjaa pyörän pyörimiskierroksista, jotta pyörän absoluuttinen sijainti voidaan laskea oikein myös silloin, kun enkooderin lukema ylittyy tai nollautuu.
+We create an auxiliary class `Encoder` in Python, which is responsible for managing and calculating encoder readings. In most encoders, the reading resets after the maximum reading, at which point the revolutions start over. This class accurately keeps track of the wheel's revolutions so that the wheel's absolute position can be calculated correctly even when the encoder reading overflows or resets.
 
-**~/ros2\_ws/src/diffdrive/diffdrive/encoder.py**
+**~/ros2_ws/src/diffdrive/diffdrive/encoder.py**
 
 ```python
 import math
@@ -74,12 +73,12 @@ class Encoder():
     self.wheel_radius = wheel_radius
     self.ticks_per_revolution = ticks_per_revolution
 
-    # renkaan säde R = 0.1m
-    # enkooderin resoluutio E = 1000 tick / kierros
+    # wheel radius R = 0.1m
+    # encoder resolution E = 1000 ticks / revolution
 
-    # renkaan kehä: 2 * pi * R
-    # kierrokset per metri = 1m / renkaan kehä
-    # ticks per metri = E * (1m / (2 * pi * R)) = E / (2 * pi * R)
+    # wheel circumference: 2 * pi * R
+    # revolutions per meter = 1m / wheel circumference
+    # ticks per meter = E * (1m / (2 * pi * R)) = E / (2 * pi * R)
 
     self.ticks_per_meter = self.ticks_per_revolution / (2 * math.pi * self.wheel_radius)
 
@@ -100,19 +99,19 @@ class Encoder():
 
     self.encoder = encoder
 
-    # enkoodereissa, jotka mittaavat rotaatiota, on usein rajallinen arvoalue (esim. 0–4095 12-bittisellä enkooderilla).
-    # Kun enkooderin arvo "kääntyy ympäri" (esim. 4095 -> 0 tai päinvastoin), tämä logiikka varmistaa, että oikea
-    # sijainti säilyy seuraamalla täysiä kierroksia.
+    # Encoders that measure rotation often have a limited value range (e.g., 0-4095 with a 12-bit encoder).
+    # When the encoder value "wraps around" (e.g., 4095 -> 0 or vice versa), this logic ensures that the correct
+    # position is maintained by tracking full revolutions.
     #
-    # self.encoder: Nykyinen enkooderin lukema.
-    # self.prev_encoder: Edellisen kierroksen enkooderin lukema.
-    # self.encoder_low_wrap: Alarajan lähellä oleva kynnysarvo (0 + marginaali)
-    # self.encoder_high_wrap: Ylärajan lähellä oleva kynnysarvo (4095 − marginaali)
-    # self.multiplier: Laskuri, joka seuraa täysiä kierroksia
+    # self.encoder: Current encoder reading.
+    # self.prev_encoder: Previous revolution's encoder reading.
+    # self.encoder_low_wrap: Threshold value near the lower limit (0 + margin)
+    # self.encoder_high_wrap: Threshold value near the upper limit (4095 - margin)
+    # self.multiplier: Counter that tracks full revolutions
     #
-    # eli kun edellinen arvo on ylä alueella (esim: 4090-4095) ja nykyinen ala alueella
-    # (esim: 0-5) niin silloin absoluuttinen asema lisääntyy ja toiseen suuntaan taas
-    # absoluuttinen asema vähenee. Kaikissa muissa tapauksissa ollaan samalla kierroksella
+    # i.e. when the previous value is in the upper range (e.g.: 4090-4095) and the current one is in the lower range
+    # (e.g.: 0-5), then the absolute position increases, and in the other direction,
+    # the absolute position decreases. In all other cases, we are in the same revolution
 
     if (self.encoder < self.encoder_low_wrap) and (self.prev_encoder > self.encoder_high_wrap):
       self.multiplier += 1
@@ -134,66 +133,65 @@ class Encoder():
       return d
 ```
 
-**Transformaatio**
+**Transformation**
 
-Transformaatioiden avulla lasketaan robotin sijainti ja orientaatio suhteessa eri koordinaatistoihin. Kun haluamme visualisoida robotin liikkeen RViz-ympäristössä, on tärkeää, että ``odom``- ja ``base_footprint``-kehysten välinen transformaatio on määritetty oikein. Tämä transformaatio yhdistää robotin fyysisen sijainnin (``base_footprint``) sen suhteelliseen sijaintiin odometrian lähtöpisteessä (``odom``).
+Transformations are used to calculate the robot's position and orientation relative to different coordinate systems. When we want to visualize the robot's movement in the RViz environment, it is important that the transformation between the `odom` and `base_footprint` frames is correctly defined. This transformation connects the robot's physical location (`base_footprint`) to its relative position at the odometry starting point (`odom`).
 
-**RViz Global Options ja Fixed Frame**
+**RViz Global Options and Fixed Frame**
 
-Fixed Frame määrittää, minkä koordinaatiston (kehyksen) mukaan kaikki muut kehykset näytetään RViz:ssä.
+Fixed Frame determines which coordinate system (frame) all other frames are displayed in RViz.
 
-Jos asetamme Fixed Frame-arvoksi ``base_footprint``:
+If we set the Fixed Frame value to `base_footprint`:
 
-- Robotin sijainti näytetään suhteessa itseensä, mikä tarkoittaa, ettei mitään liikettä visualisoida, vaikka robotti liikkuisi.
-- Tämä johtuu siitä, että base_footprint pysyy aina robotin rungossa ja seuraa sitä.
+- The robot's position is displayed relative to itself, meaning no movement is visualized, even if the robot is moving.
+- This is because the base_footprint always stays on the robot's body and follows it.
 
-Jos asetamme Fixed Frame-arvoksi ``odom``:
+If we set the Fixed Frame value to `odom`:
 
-- Robotin liike visualisoidaan suhteessa ``odom``-kehykseen, joka toimii odometrian lähtöpisteenä.
-- Tämä mahdollistaa robotin todellisen liikkeen seuraamisen ruudulla.
+- The robot's movement is visualized relative to the `odom` frame, which serves as the odometry starting point.
+- This allows tracking the robot's actual movement on the screen.
 
-**Miten transformaatio vaikuttaa?**
+**How does transformation affect it?**
 
-Kun robotti liikkuu, ``odom``-kehys pysyy paikallaan, ja ``base_footprint`` siirtyy sen suhteen. ``odom`` -> ``base_footprint``-transformaatio päivitetään jatkuvasti, ja RViz käyttää tätä tietoa piirtääkseen robotin sijainnin ja orientaation.
+When the robot moves, the `odom` frame stays in place, and the `base_footprint` moves relative to it. The `odom` -> `base_footprint` transformation is continuously updated, and RViz uses this information to draw the robot's position and orientation.
 
-Transformaatioiden laskennan ja julkaisun sijainti riippuu robotin järjestelmän arkkitehtuurista sekä vaaditun paikannuksen tarkkuudesta ja mahdollisesta integraatiosta muiden sensoreiden, kuten IMU:n tai LiDAR:n kanssa.
+The location of transformation calculation and publishing depends on the robot's system architecture, as well as the required positioning accuracy and possible integration with other sensors, such as IMU or LiDAR.
 
-Transformaatiot voidaan toteuttaa suoraan ``odom``-nodessa, jos odometria toimii järjestelmän ainoana sijaintilähteenä. Tämä lähestymistapa on erityisen sopiva yksinkertaisille järjestelmille, joissa ei ole käytössä muita antureita.
+Transformations can be implemented directly in the `odom` node if odometry is the system's only source of location. This approach is particularly suitable for simple systems that do not use other sensors.
 
-Jos kuitenkin käytössä on useita sensoreita, on suositeltavaa käyttää ROS2:n yleisesti käytettyihin paketteihin kuuluvan ´´robot_localizationin´´ EKF (Extended Kalman Filter) -nodea. EKF yhdistää kaikki saatavilla olevat tiedot, kuten enkooderit, IMU:n, LiDAR:n ja GPS:n, ja tuottaa tarkemman arvion robotin sijainnista ja orientaatiosta. Tämä parantaa paikannustarkkuutta ja kompensoi yksittäisten sensorien mahdollisia virheitä.
+If, however, multiple sensors are used, it is recommended to use the EKF (Extended Kalman Filter) node of the `robot_localization` package, which is part of commonly used ROS2 packages. EKF combines all available information, such as encoders, IMU, LiDAR, and GPS, and produces a more accurate estimate of the robot's position and orientation. This improves positioning accuracy and compensates for possible errors of individual sensors.
 
-**Tilanne IMU:n (Inertial Measurement Unit) kanssa:**
+**Situation with IMU (Inertial Measurement Unit):**
 
-IMU tuo tarkempaa dataa robotin todellisesta liikkeestä, mikä auttaa kompensoimaan pyöräluiston aiheuttamaa virhettä.
+IMU provides more accurate data on the robot's actual movement, which helps compensate for errors caused by wheel slip.
 
-Kulmanopeus (Yaw-Rate): 
-IMU:n gyroskooppi mittaa kulmanopeuksia (esim. kääntymistä z-akselin ympäri).
-Jos toinen pyörä luistaa ja pyöräenkooderit antavat väärää kulmanopeustietoa, IMU voi tunnistaa todellisen kulmanopeuden ja korjata suunta- ja sijaintitiedot.
-Tämä estää vääristymän kertyessä robotin orientaatioon (yaw).
+Angular Velocity (Yaw-Rate):
+IMU's gyroscope measures angular velocities (e.g., turning around the z-axis).
+If one wheel slips and the wheel encoders provide incorrect angular velocity information, the IMU can identify the actual angular velocity and correct the direction and position information.
+This prevents distortion from accumulating in the robot's orientation (yaw).
 
-Kiihtyvyys (Linear Acceleration)
-IMU:n kiihtyvyysanturit mittaavat robotin liikkeen kiihtyvyyttä x- ja y-suunnassa.
-Pyöräluiston aikana enkooderien arvioima lineaarinen liike voi olla väärä, mutta IMU voi tunnistaa todellisen kiihtyvyyden ja auttaa arvioimaan todellista nopeutta.
-Tämä vähentää virhettä robotin paikannuksessa.
+Acceleration (Linear Acceleration)
+IMU's accelerometers measure the acceleration of the robot's movement in the x and y directions.
+During wheel slip, the linear movement estimated by the encoders may be incorrect, but the IMU can identify the actual acceleration and help estimate the true speed.
+This reduces errors in the robot's positioning.
 
+**Situation with LiDAR (Light Detection and Ranging):**
 
-**Tilanne LiDAR:n (Light Detection and Ranging) kanssa:**
+LiDAR complements the limitations of wheel encoders by providing accurate information about the robot's environment.
 
-LiDAR täydentää pyöräenkoodereiden rajoituksia tuottamalla tarkkaa tietoa robotin ympäristöstä.
+Distance measurement: LiDAR maps the environment by measuring distances to obstacles and structures around the robot.
 
-Etäisyyksien mittaus: LiDAR kartoittaa ympäristöä mittaamalla etäisyyksiä robotin ympärillä oleviin esteisiin ja rakenteisiin.
+Static references: LiDAR can identify permanent environmental features, such as walls and furniture, which are used to determine the robot's position relative to the environment.
 
-Staattiset viitteet: LiDAR voi tunnistaa pysyviä ympäristön piirteitä, kuten seinät ja huonekalut, joita käytetään robotin sijainnin määrittämiseen suhteessa ympäristöön.
+**Correcting Drift**
 
-**Driftin korjaaminen**
+By utilizing absolute positioning methods (such as camera or LiDAR-based SLAM, GNSS positioning, UWB positioning), the robot's actual movement relative to the environment can be detected and the accumulated error of the wheel encoders can be corrected.
 
-Absoluuttista paikkaa tarjoavia paikannusmenetelmiä (kuten kamera- tai LiDAR-pohjainen SLAM, GNSS-paikannus, UWB-paikannus) hyödyntämällä voidaan havaita robotin todellisen liikkeen suhteessa ympäristöön ja korjata pyöräenkooderien kertyneen virheen. 
+For example, if the wheel encoders indicate that the robot has moved to a certain point, but the LiDAR's observation of the environment indicates otherwise, the positioning can be corrected by combining the information. In the case of ROS2, a common way to do such a correction is to feed the data streams of different positioning methods to the EKF filter of the `robot_localization` package.
 
-Esimerkiksi, jos pyöräenkooderit osoittavat, että robotti on siirtynyt tiettyyn kohtaan, mutta LiDAR:n havainto ympäristöstä kertoo muuta, paikannus voidaan korjata yhdistämällä tiedot. ROS2:n tapauksessa yleinen tapa tehdä tällaista korjausta on syöttää eri paikannusmenetelmien tietovirrat ``robot_localization``-paketin EKF-suodattimelle.
+Now that encoders are our only source of location, we will implement the publishing of transformations directly in the `odom` node, which is a simple and effective solution.
 
-Nyt kun enkooderit ovat ainoa sijaintilähteemme, toteutamme transformaatioiden julkaisemisen suoraan ``odom``-nodessa joka on yksinkertainen ja tehokas ratkaisu.
-
-**~/ros2\_ws/src/diffdrive/diffdrive/odom.py**
+**~/ros2_ws/src/diffdrive/diffdrive/odom.py**
 
 ```python
 import rclpy
@@ -219,21 +217,21 @@ class OdomNode(Node):
   def __init__(self):
     super().__init__('odom_node')
 
-    # Lue parametrit
+    # Read parameters
     self.declare_parameter('wheel_radius', 0.1)
     self.declare_parameter('wheel_base', 0.5)
     self.declare_parameter('ticks_per_revolution', 1075)
 
-    # Hae parametrien arvot
+    # Get parameter values
     self.wheel_radius = self.get_parameter('wheel_radius').value
     self.wheel_base = self.get_parameter('wheel_base').value
     self.ticks_per_revolution = self.get_parameter('ticks_per_revolution').value
 
-    self.get_logger().info(f'Pyörän säde: {self.wheel_radius}')
-    self.get_logger().info(f'Pyörien etäisyys: {self.wheel_base}')
-    self.get_logger().info(f'Anturin kierros: {self.ticks_per_revolution}')
+    self.get_logger().info(f'Wheel radius: {self.wheel_radius}')
+    self.get_logger().info(f'Distance between wheels: {self.wheel_base}')
+    self.get_logger().info(f'Sensor revolutions: {self.ticks_per_revolution}')
 
-    ## Otetaan framelle etuliite parametrinä tai jos parametriä ei syötetä, otetaan se namespace-tiedosta.
+    ## Get frame prefix as parameter or if parameter is not given, get it from namespace info.
     #self.declare_parameter('frame_prefix', '')
     #frame_prefix_param = self.get_parameter('frame_prefix').get_parameter_value().string_value
     #if frame_prefix_param:
@@ -243,8 +241,8 @@ class OdomNode(Node):
     #    self.frame_prefix = f'{ns}_' if ns and ns != '' else ''
 
     #if self.frame_prefix:
-    #        self.get_logger().info(f'Käytetään frame-etuliitettä: "{self.frame_prefix}"') 
-    
+    #        self.get_logger().info(f'Using frame prefix: "{self.frame_prefix}"')
+
 
     self.left_encoder = Encoder(self.wheel_radius, self.ticks_per_revolution)
     self.right_encoder = Encoder(self.wheel_radius, self.ticks_per_revolution)
@@ -266,18 +264,18 @@ class OdomNode(Node):
         10
     )
 
-    # TransformBroadcaster tarvitsee viitteen pääluokkaan saadakseen tarvittavan kontekstin
-    # (noden  asetukset tai muun jaetun datan). Tämä tapahtuu antamalla self parametrina.
+    # TransformBroadcaster needs a reference to the main class to get the necessary context
+    # (node settings or other shared data). This is done by passing self as a parameter.
     self.tf_broadcaster = TransformBroadcaster(self)
 
     self.prev_time = self.get_clock().now().nanoseconds
 
-    timer_period = 0.1 # Sekuntia
+    timer_period = 0.1 # Seconds
     self.timer = self.create_timer(timer_period, self.timer_callback)
     self.update = True
 
   def update_encoders_callback(self, message):
-    # Tallennetaan messagessa olevat tiedot, jotta niitä voidaan käsitellä timer_callback:ssa
+    # Store the information in the message so that it can be processed in timer_callback
     self.left_encoder.update(message.encoder1)
     self.right_encoder.update(-message.encoder2)
     self.update = True
@@ -292,15 +290,14 @@ class OdomNode(Node):
     d_left= self.left_encoder.deltam()
     d_right = self.right_encoder.deltam()
 
-    # Kuljettu matka (delta_distance) lasketaan ottamalla vasemman ja oikean pyörän kulkema matka
-    # jaettuna kahdella. Robotin liikkuma matka suoraviivaisesti keskilinjan (robottia keskeltä
-    # halkova akseli) pitkin.
-    # Kulman muutos (delta_theta) lasketaan ottamalla vasemman ja oikean pyörän kulkeman matkan erotus ja
-    # jakamalla se pyörien välisellä etäisyydellä
-    # Jos pyörät liikkuvat yhtä paljon samaan suuntaan (𝑑_left=𝑑_right -> delta_theta=0), robotti liikkuu
-    # suoraan eteen- tai taaksepäin.
-    # Jos pyörät liikkuvat yhtä paljon erisuuntiin (𝑑_left=-𝑑_right -> delta_distance=0), robotti pyörii
-    # paikallaan
+    # The distance traveled (delta_distance) is calculated by taking the distance traveled by the left and right wheels
+    # divided by two. The robot moves linearly along the centerline (the axis dividing the robot in the middle).
+    # The change in angle (delta_theta) is calculated by taking the difference between the distances traveled by the left and right wheels and
+    # dividing it by the distance between the wheels
+    # If the wheels move equally in the same direction (𝑑_left=𝑑_right -> delta_theta=0), the robot moves
+    # straight forward or backward.
+    # If the wheels move equally in opposite directions (𝑑_left=-𝑑_right -> delta_distance=0), the robot spins
+    # in place
     delta_distance = (d_left + d_right) / 2.0
     delta_theta = (d_left - d_right) / self.wheel_base
 
@@ -318,16 +315,16 @@ class OdomNode(Node):
 
     odom_msg = Odometry()
     odom_msg.header.stamp = self.get_clock().now().to_msg()
-    #odom_msg.header.frame_id = self.frame_prefix + 'odom' # Lisätään framen nimen eteen namespacen (tai parametrin) mukainen etuliite.
+    #odom_msg.header.frame_id = self.frame_prefix + 'odom' # Add a prefix to the frame name according to the namespace (or parameter).
     #odom_msg.child_frame_id = self.frame_prefix + 'base_footprint'
     odom_msg.header.frame_id = 'odom'
     odom_msg.child_frame_id = 'base_footprint'
 
-    # pose sisältää kaksi osaa:
+    # pose contains two parts:
     # position (geometry_msgs/Point)
-    #  x, y, z: Robotin sijainti koordinaatistossa.
+    #  x, y, z: Robot's position in the coordinate system.
     # orientation (geometry_msgs/Quaternion)
-    #  x, y, z, w: Robotin orientaatio quaternion-muodossa (3D-rotaatio).
+    #  x, y, z, w: Robot's orientation in quaternion format (3D rotation).
     odom_msg.pose.pose.position.x = self.odom_x ##
     odom_msg.pose.pose.position.y = self.odom_y ##
     odom_msg.pose.pose.position.z = 0.0
@@ -338,12 +335,12 @@ class OdomNode(Node):
     odom_msg.pose.pose.orientation.z = quat[2] ##
     odom_msg.pose.pose.orientation.w = quat[3] ##
 
-    # Nopeudet (valinnainen, ei käytössä tässä sovelluksessa)
+    # Speeds (optional, not used in this application)
     odom_msg.twist.twist.linear.x = linear_x
     odom_msg.twist.twist.linear.y = linear_y
     odom_msg.twist.twist.angular.z = angular_z
 
-    # Julkaistaan odometry viesti
+    # Publish odometry message
     self.odom_publisher.publish(odom_msg) ##
 
     t = TransformStamped()
@@ -357,15 +354,15 @@ class OdomNode(Node):
     t.transform.translation.y = self.odom_y ##
     t.transform.translation.z = 0.0
 
-    # z: Quaternionin osa, joka liittyy rotaatioon  z-akselin suuntaan. Tämä ei yksinään ole kulma,
-    # vaan osa rotaation akselin ja kulman yhteistä esitystä.
-    # w: Quaternionin skaalarikomponentti, joka määrittää, kuinka suuri osa rotaatiosta tulee akselin
-    # ympäriltä. Suhteessa muihin quaternion-komponentteihin, tämä määrittää kulman.
+    # z: Part of the quaternion related to rotation around the z-axis. This alone is not an angle,
+    # but part of the combined representation of the rotation axis and angle.
+    # w: Scalar component of the quaternion that determines how much of the rotation comes from around the axis.
+    # Relative to other quaternion components, this defines the angle.
 
     t.transform.rotation.z = math.sin(self.odom_theta / 2.0) ##
     t.transform.rotation.w = math.cos(self.odom_theta / 2.0) ##
 
-    # Julkaistaan transformaatio
+    # Publish transformation
     self.tf_broadcaster.sendTransform(t) ##
 
 
@@ -387,70 +384,70 @@ if __name__ == '__main__':
   main()
 ```
 
-Nyt voimme testata ohjelman toimintaa. Suorita seuraavat komennot eri terminaaleissa ja varmista, että kaikki tarvittavat nodet ovat käynnissä. Jos seuraat robottiasi RViz:ssa ja asetat Fixed Frame -asetukseksi ``[SeBot_namespace]`` ``/odom``, robotin pitäisi liikkua visualisointinäkymässä odotetusti.
+Now we can test the program's functionality. Keep the `motordriver` and `odom` nodes and RViz running. This time, send messages to the `cmd_vel` topic instead of directly using `motor_command` topics. This way you can test the robot's control using linear and angular velocity.
 
 ```bash
-# Käynnistä motordriver node (muista source)
-ros2 run motordriver motordriver 
+# Start motordriver node (remember to source)
+ros2 run motordriver motordriver
 #ros2 run motordriver motordriver [--ros-args -r __ns:=/[SeBot_namespace]]
 
-# Testataan odom -nodea
+# Test odom node
 python3 odom.py
 #python3 odom.py --ros-args -r __ns:=/[SeBot_namespace]
 
-# Tulostetaan mitä /odom -topic näyttää
+# Print what /odom topic shows
 ros2 topic echo /odom
 #ros2 topic echo /[SeBot_namespace]/odom
 
-# Aja eteenpäin
+# Drive forward
 ros2 topic pub /motor_command std_msgs/String "{data: 'SPD;100;-100;'}"
 #ros2 topic pub /[SeBot_namespace]/motor_command std_msgs/String "{data: 'SPD;100;-100;'}"
 
-# Aja taaksepäin
+# Drive backward
 ros2 topic pub /motor_command std_msgs/String "{data: 'SPD;-100;100;'}"
 
-# Pyöri paikallaan
+# Spin in place
 ros2 topic pub /motor_command std_msgs/String "{data: 'SPD;100;100;'}"
 
-# Aja ympyrää
+# Drive in a circle
 ros2 topic pub /motor_command std_msgs/String "{data: 'SPD;150;-100;'}"
 ```
 
-Kun sekä ``odom`` että ``transformaatio`` toimivat oikein, voit visualisoida nämä RVizissä, jolloin punainen Odometry-nuoli ja robotin malli osoittavat samaan suuntaan ja sijaitsevat kohdakkain.
+When both `odom` and `transformation` are working correctly, you can visualize these in RViz, where the red Odometry arrow and the robot model point in the same direction and are aligned.
 ![](kuvat/rviz/ok.png)
 
-Koodissa on rivejä joiden perässä on ``##`` kommentoimalla näitä rivejä pois eri tavalla ja käynnistämällä ohjelman uudelleen voidaan nähdä miten nämä vaikuttavat odometryn ja transformaation toimintaan.
+In the code, there are lines followed by `##`. By commenting out these lines differently and restarting the program, you can see how they affect the operation of odometry and transformation.
 
-Julktaistaan pelkkä /odom topic, transformaatio on viimeisessä paikassa johon julkaistu
+Publish only the /odom topic, the transformation is in the last place it was published
 ![](kuvat/rviz/odom.png)
 
-/odom topicissa vain rotaatio
+/odom topic only rotation
 ![](kuvat/rviz/odomz.png)
 
-/odom topicissa vain paikka
+/odom topic only position
 ![](kuvat/rviz/tf.png)
 
-transformaatiosta vain paikka
+transformation only position
 ![](kuvat/rviz/tfxy.png)
 
-transformaatiosta vain rotaatio
+transformation only rotation
 ![](kuvat/rviz/tfz.png)
 
-Kun julkaiset transformaatioiden ketjun ``odom`` -> ``base_footprint``, se ilmestyy TF-tree-rakenteeseen, joka kuvaa kaikkien TF-kehysten välisiä suhteita. Tämä on olennainen osa robotin sijainnin seuraamista suhteessa paikalliseen odom-kehykseen.
+When you publish the transformation chain `odom` -> `base_footprint`, it appears in the TF-tree structure, which describes the relationships between all TF frames. This is an essential part of tracking the robot's position relative to the local odom frame.
 
-![kääntösäde](kuvat/frames2.png)
+![turning radius](kuvat/frames2.png)
 
-Kun siirrytään kohti autonomista ajoa, TF-treehen lisätään myös ``map``-kehys. Tämä muodostaa transformaatioiden ketjun ``map`` -> ``odom`` -> ``base_footprint``, jolloin robotin sijaintia voidaan seurata tarkasti sekä kartalla että paikallisessa koordinaatistossa. Tämä mahdollistaa robotin etenemisen tarkastelun sekä paikallisesti että globaalisti. Jos tätä harjoitusta tehdään monen SeBotin kanssa samassa ``ROS_DOMAIN_ID``:ssä, on tarpeen luoda hieman keinotekoinen ``map``-kehys. Tästä esitetään mallin tuonnempana ``launch``-tiedoston yhteydessä.
+When moving towards autonomous driving, a `map` frame is also added to the TF-tree. This forms a transformation chain `map` -> `odom` -> `base_footprint`, allowing the robot's position to be accurately tracked both on the map and in the local coordinate system. This enables viewing the robot's progress both locally and globally. If this exercise is done with many SeBots in the same `ROS_DOMAIN_ID`, it is necessary to create a somewhat artificial `map` frame. A model of this will be presented later in connection with the `launch` file.
 
 ### Twist
 
-Seuraavaksi siirrymme käsittelemään ``cmd_vel`` -topicia. Sen avulla voimme ohjata robottia yksinkertaisemmin määrittämällä suoraan lineaarisen nopeuden ja kulmanopeuden. Tämä lähestymistapa poistaa tarpeen ohjata moottoreita erikseen ja tekee liikkeiden hallinnasta intuitiivisempaa.
+Next, we will move on to handling the `cmd_vel` topic. It allows us to control the robot more simply by directly defining linear velocity and angular velocity. This approach removes the need to control motors separately and makes motion control more intuitive.
 
-``cmd_vel``-topicin käyttö yhdessä Nav2-järjestelmän kanssa mahdollistaa robotin autonomisen ajon. Nav2 ohjaa robottia lähettämällä lineaarisen nopeuden ja kulmanopeuden komentoja ``cmd_vel`` -topiciin, jolloin robotti voi navigoida itsenäisesti määritetyn kartan ja reitin perusteella.
+The use of the `cmd_vel` topic together with the Nav2 system enables autonomous driving of the robot. Nav2 controls the robot by sending linear and angular velocity commands to the `cmd_vel` topic, allowing the robot to navigate independently based on a defined map and path.
 
-Käytännössä ``cmd_vel``-node muuntaa lineaarisen nopeuden ``linear.x`` ja kulmanopeuden ``angular.z`` pyöräkohtaisiksi nopeus ohjeiksi, joita ``motor_command ``-topic ymmärtää: ``SPD;vel_l;vel_r;``
+In practice, the `cmd_vel` node converts the linear velocity `linear.x` and angular velocity `angular.z` into wheel-specific speed commands that the `motor_command` topic understands: `SPD;vel_l;vel_r;`
 
-**~/ros2\_ws/src/diffdrive/diffdrive/cmd_vel.py**
+**~/ros2_ws/src/diffdrive/diffdrive/cmd_vel.py**
 
 ```python
 import rclpy
@@ -465,19 +462,19 @@ class CmdVelNode(Node):
   def __init__(self):
     super().__init__('cmd_vel_node')
 
-    # Lue parametrit
+    # Read parameters
     self.declare_parameter('wheel_radius', 0.1)
     self.declare_parameter('wheel_base', 0.5)
     self.declare_parameter('ticks_per_revolution', 1075)
 
-    # Hae parametrien arvot
+    # Get parameter values
     self.wheel_radius = self.get_parameter('wheel_radius').value
     self.wheel_base = self.get_parameter('wheel_base').value
     self.ticks_per_revolution = self.get_parameter('ticks_per_revolution').value
 
-    self.get_logger().info(f'Pyörän säde: {self.wheel_radius}')
-    self.get_logger().info(f'Pyörien etäisyys: {self.wheel_base}')
-    self.get_logger().info(f'Anturin kierros: {self.ticks_per_revolution}')
+    self.get_logger().info(f'Wheel radius: {self.wheel_radius}')
+    self.get_logger().info(f'Distance between wheels: {self.wheel_base}')
+    self.get_logger().info(f'Sensor revolutions: {self.ticks_per_revolution}')
 
     self.cmd_vel_subscriber = self.create_subscription(
         Twist,
@@ -493,10 +490,10 @@ class CmdVelNode(Node):
     )
 
   def mps_to_spd(self,mps):
-    # muunnetan m/s moottoriohjaimen spd arvoksi
-    pid_freq = 10 # Moottoriohjain päivittyy 10Hz taajuudella
+    # convert m/s to motor controller spd value
+    pid_freq = 10 # Motor controller updates at 10Hz frequency
 
-    # kulmanopeus (rad/s)
+    # angular velocity (rad/s)
     radps = mps / self.wheel_radius
 
     # RPM
@@ -506,8 +503,8 @@ class CmdVelNode(Node):
     return spd
 
   def cmd_vel_callback(self, msg):
-    # mps_l = vasen rengas m/s
-    # mps_r = oikea rengas m/s
+    # mps_l = left wheel m/s
+    # mps_r = right wheel m/s
     mps_l = +(msg.linear.x + (msg.angular.z * self.wheel_base / 2.0))
     mps_r = -(msg.linear.x - (msg.angular.z * self.wheel_base / 2.0))
 
@@ -535,62 +532,68 @@ if __name__ == '__main__':
   main()
 ```
 
-Nyt on aika kokeilla ohjelmaa. Pidä ``motordriver``- ja ``odom``-nodet sekä RViz käynnissä. Tällä kertaa lähetä viestit ``cmd_vel``-topiciin sen sijaan, että käyttäisit suoraan ``motor_command``-topiceja. Näin voit testata robotin ohjausta nopeuden ja kulmanopeuden avulla.
+Now it's time to try the program. Keep the `motordriver` and `odom` nodes and RViz running. This time, send messages to the `cmd_vel` topic instead of directly using `motor_command` topics. This way you can test the robot's control using linear and angular velocity.
 
 ```bash
-# Käynnistetään cmd_vel node
+# Launch cmd_vel node
 python3 cmd_vel.py
 
-# Robotti liikkuu eteenpäin 0.5 m/s:
+# Robot moves forward at 0.5 m/s:
 ros2 topic pub /cmd_vel geometry_msgs/Twist "{linear: {x: 0.5, y: 0.0, z: 0.0},	angular: {x: 0.0, y: 0.0, z: 0.0}}"
-# Sama huomioiden namespace:
+# Same considering namespace:
 ros2 topic pub /[SeBot_namespace]/cmd_vel geometry_msgs/Twist "{linear: {x: 0.5, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 0.0}}"
 
 
-# Robotti kääntyy vastapäivään paikallaan (kulmanopeus 1 rad/s):
+# Robot turns counter-clockwise in place (angular velocity 1 rad/s):
 ros2 topic pub /cmd_vel geometry_msgs/Twist "{linear: {x: 0.0, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 1.0}}"
 
-# Robotti liikkuu kaarella myötäpäivään (eteenpäin + käännös):
+# Robot moves in a clockwise arc (forward + turn):
 ros2 topic pub /cmd_vel geometry_msgs/Twist "{linear: {x: 0.3, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: -0.5}}"
 ```
-### Lisätehtävä: Teleop_twist_keyboard
-Robotin ajaminen yksittäisillä komentorivikehotteilla on työlästä. Varsinaisesti ideana on toki se, että robotin ohjauskokonaisuus antaa näitä komentoja enemmän tai vähemmän itsenäisesti ("autonominen ajaminen"), mutta tämän harjoituksen puitteissa hyvä väliaskel on ottaa käyttöön jokin manuaalisen etäohjaamisen mahdollistava ROS2 paketti. Helpointa on kokeilla ohjausta näppäimistöllä, minkä mahdollistaa [teleop_twist_keyboard](https://index.ros.org/r/teleop_twist_keyboard/).
+
+### Additional task: Teleop_twist_keyboard
+
+Driving the robot with individual command line prompts is laborious. The actual idea is, of course, that the robot's control system gives these commands more or less autonomously ("autonomous driving"), but within the scope of this exercise, a good intermediate step is to introduce a ROS2 package that enables manual remote control. The easiest way is to try controlling with the keyboard, which is made possible by [teleop_twist_keyboard](https://index.ros.org/r/teleop_twist_keyboard/).
+
 ```bash
 sudo apt install ros-jazzy-teleop-twist-keyboard
 ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
-#ros2 run teleop_twist_keyboard teleop_twist_keyboard.py --ros-args -r /cmd_vel:=/[SeBot_namespace]/cmd_vel # Jos käytössä on namespace
+#ros2 run teleop_twist_keyboard teleop_twist_keyboard.py --ros-args -r /cmd_vel:=/[SeBot_namespace]/cmd_vel # If namespace is used
 
 ```
 
-``teleop_twist_keyboard`` voidaan ohjata julkaisemaan twist-viestejä myös johonkin muuhun topiciin parametrillä ``--ros-args --remap cmd_vel:=[joku_muu_topic]``. Jos harjoituksessa on mukana vain yksi SeBot tai kukin toimii omassa ``ROS_DOMAIN_ID``:ssä, käytämme oletuksena ``/cmd_vel``-topicia, eikä topicia pitäisi olla tarpeen säätää, sillä ``/cmd_vel`` on yleisesti käytetty standardi ROS 2:ssa.
+`teleop_twist_keyboard` can also be configured to publish twist messages to another topic using the parameter `--ros-args --remap cmd_vel:=[some_other_topic]`. If only one SeBot is involved in the exercise or each operates in its own `ROS_DOMAIN_ID`, we use the `/cmd_vel` topic by default, and there should be no need to adjust the topic, as `/cmd_vel` is a commonly used standard in ROS 2.
 
-Mikäli haluat ohjata robottia peliohjaimella, kannattaa tutustua ``[teleop_twist_joy](https://index.ros.org/r/teleop_twist_joy/#jazzy)``-pakettiin. Tämä asennetaan ja ajetaan komennoilla
+If you want to control the robot with a game controller, you should check out the `[teleop_twist_joy](https://index.ros.org/r/teleop_twist_joy/#jazzy)` package. This is installed and run with the commands
+
 ```bash
 apt install ros-jazzy-teleop-twist-joy
-ros2 launch teleop_twist_joy teleop-launch.py joy_config:='[valitse ohjaimen konfiguraatio, esimerkiksi 'xbox']'
+ros2 launch teleop_twist_joy teleop-launch.py joy_config:='[select controller configuration, for example 'xbox']'
 ```
-> Huomaa, että teleop_twist_joy käynnistetään ``launch``, ei ``run`` komennolla. Lisäksi sinun tulee varmistua siitä, että konfiguraatio vastaa yhdistettyä ohjainta. Vaihtoehtoja löytyy osoitteesta [https://github.com/ros2/teleop_twist_joy/tree/rolling/config](https://github.com/ros2/teleop_twist_joy/tree/rolling/config).
 
-### PWM- ja PID-säädön vertailu
-Jos haluamme vertailla robotin toimintaa PWM-säädön ja PID-säädetyn nopeuden välillä, voimme yksinkertaisesti vaihtaa yhden koodirivin, joka määrittää säätötyypin.
+> Note that teleop_twist_joy is launched with the `launch` command, not `run`. In addition, you must ensure that the configuration matches the connected controller. Options can be found at [https://github.com/ros2/teleop_twist_joy/tree/rolling/config](https://github.com/ros2/teleop_twist_joy/tree/rolling/config).
+
+### Comparison of PWM and PID control
+
+If we want to compare the robot's operation between PWM control and PID-controlled speed, we can simply change one line of code that determines the control type.
 
 ```python
 string_msg.data = "SPD;%i;%i;"%(vel_l,vel_r)
 ```
 
-muotoon
+to the form
 
 ```python
 string_msg.data = "PWM;%i;%i;"%(vel_l,vel_r)
-#(vel_l ja vel_r saattavat vaatia pienet kertoimet,
-#jos moottorit eivät pyöri lainkaan pienillä arvoilla
-#tai vaihtoehtoisest topicin x ja z arvoihin vain isompia lukuja)
+#(vel_l and vel_r may require small coefficients,
+#if the motors do not rotate at all with small values
+#or alternatively only larger numbers for the x and z values of the topic)
 ```
 
-Kaikki kunnossa, päivitetään ``setup.py`` ja käännetään paketti osaksi järjestelmää:
+All good, update `setup.py` and compile the package as part of the system:
 
-**~/ros2\_ws/src/diffdrive/setup.py**
+**~/ros2_ws/src/diffdrive/setup.py**
 
 ```python
 from setuptools import find_packages, setup
@@ -631,23 +634,23 @@ setup(
 cd ~/ros2_ws
 colcon build --packages-select diffdrive
 
-# Testataan toiminta
+# Test functionality
 ros2 run diffdrive odom
 ros2 run diffdrive cmd_vel
 #ros2 run diffdrive odom --ros-args -r __ns:=/[SeBot_namespace]
 #ros2 run diffdrive cmd_vel --ros-args -r __ns:=/[SeBot_namespace]
 
-# odom.py ja cmd_vel.py tiedostot sisältävät kohdat joissa skriptin muuttujille haetaan arvot käynnistysparametreinä. Nämä parametrit voi syöttää käynnistysvaiheessa myös ulkoisesta tiedostosta.
+# The odom.py and cmd_vel.py files contain sections where values for script variables are retrieved as startup parameters. These parameters can also be input from an external file during startup.
 
-# Tässä esimerkki, jossa haetaan parametrit ~/ros2_ws/config/params.yaml tiedostosta. Alempana luodaan tähän tiedostoon tarvittava sisältö.
+# Here is an example where parameters are retrieved from the ~/ros2_ws/config/params.yaml file. The necessary content for this file is created below.
 ros2 run diffdrive odom --ros-args --params-file ~/ros2_ws/config/params.yaml
 ```
 
-### Launch -tiedostot
+### Launch files
 
-ROS 2:ssa launch-tiedostot mahdollistavat yhden tai useamman noden käynnistämisen samanaikaisesti. Päivitämme aiemmin luomamme launch-tiedoston, joka käynnisti URDF-noden, lisäämällä siihen myös tekemämme ``odom`` - ja ``cmd_vel`` -nodet, jotta kaikki tarvittavat toiminnot voidaan käynnistää yhdellä komennolla.
+In ROS 2, launch files enable launching one or more nodes simultaneously. We will update the launch file we created earlier, which launched the URDF node, by adding our `odom` and `cmd_vel` nodes to it as well, so that all necessary functions can be launched with a single command.
 
-**~/ros2\_ws/src/diffdrive/launch/diffdrive.launch.py**
+**~/ros2_ws/src/diffdrive/launch/diffdrive.launch.py**
 
 ```python
 import os
@@ -658,8 +661,8 @@ from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 def generate_launch_description():
-    # NAMESPACE = 'SeBotxx' # korvaa xx oman Sebotin tunnisteella, esimerkiksi IP-osoitteen viimeisellä tavulla.
-    # FRAME_PREFIX = NAMESPACE+"_" # luodaan robot_state_publisherin tukeman frame_prefix-parametrin arvo
+    # NAMESPACE = 'SeBotxx' # replace xx with your SeBot's identifier, for example the last byte of the IP address.
+    # FRAME_PREFIX = NAMESPACE+"_" # create the value of the frame_prefix parameter supported by robot_state_publisher
 
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')
 
@@ -679,7 +682,7 @@ def generate_launch_description():
             'use_sim_time',
             default_value='false',
             description='Use simulation (Gazebo) clock if true'),
-            
+
         Node(
             package='robot_state_publisher',
             executable='robot_state_publisher',
@@ -688,7 +691,7 @@ def generate_launch_description():
             #namespace = NAMESPACE,
             #parameters=[{'use_sim_time': use_sim_time, 'robot_description': robot_desc, 'frame_prefix': FRAME_PREFIX}],
             parameters=[{'use_sim_time': use_sim_time, 'robot_description': robot_desc}],
-            #arguments=[urdf] # 26.5.2025 tämä on tarpeeton rivi, sillä robot_state_publisher ei parsi komentokehotteen argumentteja.
+            #arguments=[urdf] # 26.5.2025 this line is redundant, as robot_state_publisher does not parse command line arguments.
             ),
 
         Node(
@@ -733,8 +736,8 @@ def generate_launch_description():
               'params.yaml')]
 
           ),
-        
-        ## Lisätään muunnos map->[namespace]_odom jotta kaikki robotit saadaan mukaan samaan TF-puuhun. 
+
+        ## Add conversion map->[namespace]_odom so that all robots are included in the same TF tree.
         #Node(
         #    package='tf2_ros',
         #    executable='static_transform_publisher',
@@ -747,15 +750,15 @@ def generate_launch_description():
     ])
 ```
 
-``odom.py`` ja ``cmd_vel.py`` tiedostot sisälsivät rivejä kuten esim:
+`odom.py` and `cmd_vel.py` files contained lines such as:
 
 ```python
     self.wheel_radius = self.get_parameter('wheel_radius').value
 ```
 
-launch tiedostossa määrittelimme nyt ``parameters=["~ros2_ws/config/params.yaml"]`` joka tarkoittaa, että voimme sinne asetella parametrejä, joita voimme päivittää ilman, että tarvitsee kääntää järjestemää, riittää vain noden uudelleen käynnistys.
+In the launch file, we now defined `parameters=["~ros2_ws/config/params.yaml"]`, which means we can set parameters there that we can update without having to compile the system; only restarting the node is sufficient.
 
-**~/ros2\_ws/config/params.yaml**
+**~/ros2_ws/config/params.yaml**
 
 ```yaml
 motordriver_node:
@@ -772,55 +775,59 @@ cmd_vel_node:
     wheel_base: 0.7
 ```
 
-##### Käännetään (rakennetaan ympäristö)
+##### Compile (build environment)
+
 ```bash
 cd ~/ros2_ws
 colcon build --packages-select diffdrive
 ```
 
 ##### Source
+
 ```bash
 source ~/ros2_ws/install/setup.bash
 ```
 
-##### Käynnistetään
+##### Launch
+
 ```bash
 ros2 launch diffdrive diffdrive.launch.py
 ```
 
-##### Testataan (toisessa päätteessä)
+##### Test (in another terminal)
+
 ```bash
 ros2 topic pub /motor_command std_msgs/String "{data: 'SPD;100;100;'}"
 ```
 
-### Automaattinen käynnistyminen robotin käynnistyessä
+### Automatic startup when robot starts
 
-Jotta ROS2-paketti voidaan käynnistää automaattisesti järjestelmän käynnistyessä, voit käyttää systemd-palvelua Linux-järjestelmissä. ROS2-paketit vaativat ympäristön lataamisen, mikä tarkoittaa, että ROS2:n jakeluversion (``/opt/ros/jazzy/setup.bash``) ja työtilan (``install/setup.bash``) asetuskomennot täytyy suorittaa automaattisesti ennen noden tai launch-tiedoston käynnistämistä.
+To automatically launch a ROS2 package when the system starts, you can use a systemd service in Linux systems. ROS2 packages require environment loading, which means that the setup commands for the ROS2 distribution (`/opt/ros/jazzy/setup.bash`) and the workspace (`install/setup.bash`) must be executed automatically before launching the node or launch file.
 
-Luodaan bash scripti jonka systemd service käy käynnistämässä:
+Create a bash script that the systemd service will launch:
 
-**/home/ros2/ros2\_ws/autostart.sh**
+**/home/ros2/ros2_ws/autostart.sh**
 
 ```bash
 #!/bin/bash
 
-# Lataa ROS2-ympäristö
+# Load ROS2 environment
 source /opt/ros/jazzy/setup.bash
 
-# Lataa työtilan ympäristö
+# Load workspace environment
 source /home/ros2/ros2_ws/install/setup.bash
 
-# Suorita launch-tiedosto
+# Execute launch file
 ros2 launch diffdrive diffdrive.launch.py
 ```
 
-Luodaan .service tiedosto jota hallitaan systemctl komennolla. Huom, muokkaaminen pitää tapahtua sudo:na 
+Create a .service file that is managed by the systemctl command. Note that editing must be done as sudo
 
 ```bash
 sudo nano /etc/systemd/system/ros2_motordriver.service
 ```
 
-**/etc/systemd/system/ros2\_motordriver.service**
+**/etc/systemd/system/ros2_motordriver.service**
 
 ```bash
 [Unit]
@@ -834,34 +841,34 @@ ExecStart=/home/ros2/ros2_ws/autostart.sh
 Restart=always
 
 Environment="PYTHONUNBUFFERED=1"
-#tarkoittaa, että Python suoritetaan ilman tulosteen puskurointia (unbuffered mode).
-#Tämä vaikuttaa erityisesti stdout- ja stderr-virtoihin (eli tulosteisiin ja virheilmoituksiin),
-#jotka muuten saattaisivat viivästyä puskurin takia.
+# means that Python is executed without output buffering (unbuffered mode).
+# This particularly affects stdout and stderr streams (i.e., outputs and error messages),
+# which might otherwise be delayed due to buffering.
 
 [Install]
 WantedBy=multi-user.target
 ```
 
 ```bash
-# scriptin käynnistys
+# start script
 sudo systemctl start ros2_motordriver.service
 
-# aseta scripti käynnistymään järjestelmän käynnistyessä
+# set script to start when system boots
 sudo systemctl enable ros2_motordriver.service
 
-# uudelleen käynnistä (esim, jos vaihdat parametrejä)
+# restart (e.g., if you change parameters)
 sudo systemctl restart ros2_motordriver.service
 
-# tarkista tila
+# check status
 systemctl status ros2_motordriver.service
 
-# loki
+# log
 journalctl -u ros2_motordriver.service -f
 ```
 
-### Lisätehtävä: Kaikki valmista LED
+### Additional task: All ready LED
 
-Tutustu allaolevaan koodiin ja selvitä sen toiminta. Tarvitaan led ja vastus kytkettynä RasperryPi:n GPIO interface pinneihin 16 (GPIO-23) ja 14 (GND)
+Familiarize yourself with the code below and find out how it works. An LED and a resistor connected to Raspberry Pi's GPIO interface pins 16 (GPIO-23) and 14 (GND) are needed.
 
 ```python
 import rclpy
@@ -875,7 +882,7 @@ LED_PIN = 23
 # Open GPIO chip (default for Raspberry Pi)
 chip = lgpio.gpiochip_open(4)
 
-# Aseta LED pinni ulostuloksi
+# Set LED pin as output
 lgpio.gpio_claim_output(chip, LED_PIN)
 
 class NodeChecker(Node):
@@ -883,7 +890,7 @@ class NodeChecker(Node):
         super().__init__('node_checker')
 
     def get_running_nodes(self):
-        # Haetaan kaikki nodet
+        # Get all nodes
         node_names_and_namespaces = self.get_node_names_and_namespaces()
         nodes = [name for name, _ in node_names_and_namespaces]
         return nodes
@@ -901,13 +908,13 @@ def main():
           nodes = node.get_running_nodes()
           check_nodes = ['robot_state_publisher', 'motordriver_node', 'odom_node', 'cmd_vel_node']
           active = set(check_nodes).issubset(set(nodes))
-      
+
           if active:
               lgpio.gpio_write(chip, LED_PIN, 1)
-  
+
           else:
               lgpio.gpio_write(chip, LED_PIN, 0)
-  
+
           time.sleep(1)
 
     except KeyboardInterrupt:
@@ -925,5 +932,4 @@ if __name__ == '__main__':
 
 ![piled](kuvat/pi_led.jpeg)
 
--
-Nomga Oy - SeAMK - ROS 2 ja moottorinohjaus: PWM-signaalista robottien liikkeenhallintaan2025
+- Nomga Oy - SeAMK - ROS 2 and motor control: From PWM signal to robot motion control2025

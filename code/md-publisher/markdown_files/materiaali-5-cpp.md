@@ -1,11 +1,11 @@
-### odom ja cmd_vel C++:lla toteutettuna
+### odom and cmd_vel implemented in C++
 
 ```bash
 cd ~/ros2_ws/src
 ros2 pkg create --build-type ament_cmake diffdrivec
 ```
 
-**~/ros2\_ws/src/diffdrivec/src/encoder.hpp**
+**~/ros2_ws/src/diffdrivec/src/encoder.hpp**
 
 ```cpp
 #ifndef ENCODER_HPP
@@ -45,7 +45,7 @@ private:
 #endif // ENCODER_HPP
 ```
 
-**~/ros2\_ws/src/diffdrivec/src/encoder.cpp**
+**~/ros2_ws/src/diffdrivec/src/encoder.cpp**
 
 ```cpp
 #include "encoder.hpp"
@@ -95,7 +95,7 @@ double Encoder::deltam() {
 }
 ```
 
-**~/ros2\_ws/src/diffdrivec/src/odom.cpp**
+**~/ros2_ws/src/diffdrivec/src/odom.cpp**
 
 ```cpp
 #include "rclcpp/rclcpp.hpp"
@@ -246,7 +246,7 @@ int main(int argc, char *argv[]) {
 }
 ```
 
-**~/ros2\_ws/src/diffdrivec/src/cmd_vel.cpp**
+**~/ros2_ws/src/diffdrivec/src/cmd_vel.cpp**
 
 ```cpp
 #include "rclcpp/rclcpp.hpp"
@@ -258,18 +258,18 @@ int main(int argc, char *argv[]) {
 class CmdVelNode : public rclcpp::Node {
 public:
     CmdVelNode() : Node("cmd_vel") {
-        // Lue parametrit
+        // Declare parameters
         this->declare_parameter<double>("wheel_radius", 0.1);
         this->declare_parameter<double>("wheel_base", 0.5);
 
-        // Hae parametrien arvot
+        // Get parameter values
         wheel_radius_ = this->get_parameter("wheel_radius").as_double();
         wheel_base_ = this->get_parameter("wheel_base").as_double();
 
         RCLCPP_INFO(this->get_logger(), "Wheel radius: %f", wheel_radius_);
         RCLCPP_INFO(this->get_logger(), "Wheel base: %f", wheel_base_);
 
-        // Luo tilaajat ja julkaisijat
+        // Create subscribers and publishers
         cmd_vel_subscriber_ = this->create_subscription<geometry_msgs::msg::Twist>(
             "cmd_vel",
             10,
@@ -284,21 +284,21 @@ public:
 
 private:
     void cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg) {
-        // Laske vasemman ja oikean pyörän nopeudet
+        // Calculate left and right wheel speeds
         double vel_l = +((msg->linear.x + (msg->angular.z * wheel_base_ / 2.0)) / wheel_radius_) * 60 / (2 * M_PI);
         double vel_r = -((msg->linear.x - (msg->angular.z * wheel_base_ / 2.0)) / wheel_radius_) * 60 / (2 * M_PI);
 
-        // Luo ja julkaise motor_command-viesti
+        // Create and publish motor_command message
         auto string_msg = std_msgs::msg::String();
         string_msg.data = "SPD;" + std::to_string(static_cast<int>(vel_l)) + ";" + std::to_string(static_cast<int>(vel_r)) + ";";
         mc_publisher_->publish(string_msg);
     }
 
-    // Parametrit
+    // Parameters
     double wheel_radius_;
     double wheel_base_;
 
-    // ROS 2 tilaajat ja julkaisijat
+    // ROS 2 subscribers and publishers
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_subscriber_;
     rclcpp::Publisher<std_msgs::msg::String>::SharedPtr mc_publisher_;
 };
@@ -314,7 +314,7 @@ int main(int argc, char *argv[]) {
 }
 ```
 
-**~/ros2\_ws/src/diffdrivec/CMakeLists.txt**
+**~/ros2_ws/src/diffdrivec/CMakeLists.txt**
 
 ```bash
 cmake_minimum_required(VERSION 3.8)
@@ -380,7 +380,7 @@ install(TARGETS
 ament_package()
 ```
 
-**~/ros2\_ws/src/diffdrivec/package.xml**
+**~/ros2_ws/src/diffdrivec/package.xml**
 
 ```xml
 <?xml version="1.0"?>
@@ -417,7 +417,7 @@ ament_package()
 </package>
 ```
 
-Käännös ja käynnistys
+Compilation and launch
 
 ```bash
 cd ~/ros2_ws
@@ -425,12 +425,11 @@ colcon build --packages-select diffdrivec
 
 source ~/ros2_ws/install/setup.bash
 
-#huom, python versiot käyttävät samoja topic nimiä, joten
-#pysäytä ne tai anna topiceille uudet nimet jottei tule konflikteja
+# Note, python versions use the same topic names, so
+# stop them or give the topics new names to avoid conflicts
 
 ros2 run diffdrivec odom
 ros2 run diffdrivec cmd_vel
 ```
 
--
-Nomga Oy - SeAMK - ROS 2 ja moottorinohjaus: PWM-signaalista robottien liikkeenhallintaan
+- Nomga Oy - SeAMK - ROS 2 and motor control: From PWM signal to robot motion control

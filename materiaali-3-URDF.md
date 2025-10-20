@@ -1,23 +1,23 @@
 ### URDF
 
-URDF-tiedosto (Unified Robot Description Format) on XML-pohjainen tiedostomuoto, joka sisältää robotin rakenteellisen ja kinematiikkaan liittyvän kuvauksen. Se määrittelee esimerkiksi robotin rungot, nivelet, materiaalit ja mittasuhteet.
+A URDF (Unified Robot Description Format) file is an XML-based file format that contains a structural and kinematic description of a robot. It defines, for example, the robot's bodies, joints, materials, and dimensions.
 
-![kääntösäde](kuvat/kinematic.png)
+![turning radius](kuvat/kinematic.png)
 
-Malli koostuu nivelistä ja linkeistä. Nivelet voivat olla joko kiinteitä tai liikkuvia (kiinteästi paikallaan olevat linkit kuten anturit ja liikkuvat linkit kuten käsivarsi tai pyörät). Kun robottiin lisätään esimerkiksi LIDAR ja 3D-kamera, pistepilvet ja muu sensoridata saadaan yhteiseen koordinaatistoon, jolloin ne kuvaavat samaa ympäristöä.
+The model consists of joints and links. Joints can be either fixed or movable (fixed links such as sensors and movable links such as an arm or wheels). When a LIDAR and a 3D camera are added to the robot, for example, point clouds and other sensor data are brought into a common coordinate system, so they describe the same environment.
 
-URDF-mallin avulla voidaan visualisoida ja simuloida robotin rakennetta ja liikettä työkaluissa kuten RViz ja Gazebo.
+URDF models can be used to visualize and simulate robot structure and movement in tools like RViz and Gazebo.
 
-Ennen seuraava vaihetta moottorinohjauksessa, luodaan malli robotista. Tämä mahdollistaa robotin liikkeiden seuraamisen paremmin RVIz-työkalun avulla, mikä auttaa visualisoimaan ja ymmärtämään toimintaa paremmin.
+Before the next step in motor control, a model of the robot is created. This allows better tracking of the robot's movements using the RViz tool, which helps to visualize and understand the operation better.
 
-Luodaan ``diffdrive`` -paketti
+Create a `diffdrive` package
 
 ```bash
 cd ~/ros2_ws/src
 ros2 pkg create --build-type ament_python diffdrive
 ```
 
-Tehdään hakemistot asetuksille ja launch -tiedostoille.
+Create directories for configurations and launch files.
 
 ```bash
 cd ~/ros2_ws
@@ -26,9 +26,9 @@ cd ~/ros2_ws/src/diffdrive
 mkdir launch
 ```
 
-> Jatkossa laskennoissa ei huomioida tässä määriteltyjä robotin geometrisia ominaisuuksia. Tämän vuoksi, jotta liike vastaisi todellisuutta, on varmistettava, että pyörien halkaisija ja niiden välinen etäisyys ovat laskelmissa yhtenevät sekä tässä määriteltyjen että todellisen laitteiston arvojen kanssa.
+> In future calculations, the robot's geometric properties defined here will not be taken into account. Therefore, for the movement to correspond to reality, it must be ensured that the wheel diameter and the distance between them are consistent in the calculations with both the values defined here and the actual hardware values.
 
-**~/ros2\_ws/config/robot.urdf**
+**~/ros2_ws/config/robot.urdf**
 
 ```xml
 <?xml version="1.0"?>
@@ -92,11 +92,11 @@ mkdir launch
 </robot>
 ```
 
-Luodaan launch-skripti, joka julkaisee URDF-tiedoston ``robot_description`` -topicissa hyödyntäen ``robot_state_publisher`` -nodea. Tämä mahdollistaa mallin jakamisen RViz:n ja muiden nodejen käyttöön.
+Create a launch script that publishes the URDF file on the `robot_description` topic using the `robot_state_publisher` node. This allows the model to be shared with RViz and other nodes.
 
-ROS2:n launch-tiedosto on käytännössä skripti, jolla käynnistetään yksi tai useampi ROS2-sovellus, kuten nodeja, parametreja tai muita prosesseja. Launch-tiedosto mahdollistaa järjestelmän osien hallinnan yhdestä paikasta ja tekee kompleksisten järjestelmien käynnistämisestä helpompaa ja joustavampaa.
+A ROS2 launch file is essentially a script that launches one or more ROS2 applications, such as nodes, parameters, or other processes. A launch file allows managing system components from one place and makes launching complex systems easier and more flexible.
 
-**~/ros2\_ws/src/diffdrive/launch/diffdrive.launch.py**
+**~/ros2_ws/src/diffdrive/launch/diffdrive.launch.py**
 
 ```python
 import os
@@ -108,12 +108,12 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')
-    #NAMESPACE = 'SeBotxx' # korvaa xx oman Sebotin tunnisteella, esimerkiksi IP-osoitteen viimeisellä tavulla.
+    #NAMESPACE = 'SeBotxx' # replace xx with your SeBot's identifier, e.g., the last byte of the IP address.
     #FRAME_PREFIX = NAMESPACE+"_"
-    # Työhakemisto
+    # Working directory
     colcon_prefix_path = os.getenv('COLCON_PREFIX_PATH').split("/install")[0]
 
-    # Luetaan URDF -tiedosto robot_desc muuttujaan
+    # Read URDF file into robot_desc variable
     urdf_file_name = 'robot.urdf'
     urdf = os.path.join(
         colcon_prefix_path,
@@ -127,20 +127,20 @@ def generate_launch_description():
             'use_sim_time',
             default_value='false',
             description='Use simulation (Gazebo) clock if true'),
-            
-        # Käynnistettävä node
+
+        # Node to launch
         Node(
             package='robot_state_publisher',
             executable='robot_state_publisher',
             name='robot_state_publisher',
             output='screen',
-            #parameters=[{'use_sim_time': use_sim_time, 'robot_description': robot_desc, 'frame_prefix': FRAME_PREFIX}],# poista tämän rivin kommentti, jos haluat käyttää usean robotin namespace-järjestelyä. Kommentoi vastaavasti seuraava rivi pois.
+            #parameters=[{'use_sim_time': use_sim_time, 'robot_description': robot_desc, 'frame_prefix': FRAME_PREFIX}],# uncomment this line if you want to use a multi-robot namespace arrangement. Comment out the next line accordingly.
             parameters=[{'use_sim_time': use_sim_time, 'robot_description': robot_desc}],
-            #arguments=[urdf], # 26.5.2025 Tämä rivi on ylimääräinen, robot_state_publisher ei parsi komentoriviargumentteja erikseen. URDF-tiedosto välitetään sille parametreina.
-            #namespace=NAMESPACE, # poista tämän rivin kommentti, jos haluat käyttää usean robotin namespace-järjestelyä.
+            #arguments=[urdf], # 26.5.2025 This line is redundant, robot_state_publisher does not parse command line arguments separately. The URDF file is passed to it as parameters.
+            #namespace=NAMESPACE, # uncomment this line if you want to use a multi-robot namespace arrangement.
             ),
-        
-        ## Lisätään muunnos map->[namespace]_odom jotta kaikki robotit saadaan mukaan samaan TF-puuhun. 
+
+        ## Add conversion map->[namespace]_odom so that all robots are included in the same TF tree.
         #Node(
         #    package='tf2_ros',
         #    executable='static_transform_publisher',
@@ -153,17 +153,18 @@ def generate_launch_description():
     ])
 ```
 
->Huomaa, että namespace-asetus voidaan kirjoittaa kätevästi osaksi launch-tiedoston node-luokan parametrilistaa, jolloin se tulee aina huomioiduksi automaattisesti. Voimme ajaa launch-tiedoston omassa hakemistossa ilman kääntämistä ja tarkistaa sen toiminta
+> Note that the namespace setting can be conveniently written as part of the launch file's node class parameter list, so that it is always automatically taken into account. We can run the launch file in its own directory without compiling and check its functionality
 
-Kokeillaan käynnistää ``diffdrive.launch.py`` ennen sen kääntämistä mukaan pakettiin:
+Let's try launching `diffdrive.launch.py` before compiling it into the package:
+
 ```
 cd ~/ros2_ws/src/diffdrive/launch
 ros2 launch diffdrive.launch.py
 ```
 
-Muokataan ``setup.py`` -tiedostoa siten, että myös config- ja launch-hakemistojen tiedostot lisätään mukaan paketin käännökseen. Tämä varmistaa, että kaikki tarvittavat resurssit, kuten konfiguraatio- ja käynnistystiedostot, ovat käytettävissä asennuksen jälkeen.
+Modify the `setup.py` file so that the files in the config and launch directories are also included in the package compilation. This ensures that all necessary resources, such as configuration and launch files, are available after installation.
 
-**~/ros2\_ws/src/diffdrive/setup.py**
+**~/ros2_ws/src/diffdrive/setup.py**
 
 ```python
 from setuptools import find_packages, setup
@@ -198,7 +199,7 @@ setup(
 )
 ```
 
-Käännetään projekti, ja koska olemme lisänneet uuden paketin, on tärkeää suorittaa source-komento uudelleen. Tämän jälkeen voimme käynnistää robotin URDF-mallin ja varmistaa sen toimivuuden.
+Compile the project, and since we have added a new package, it is important to re-run the source command. After this, we can launch the robot's URDF model and ensure its functionality.
 
 ```bash
 cd ~/ros2_ws
@@ -208,32 +209,30 @@ source ~/ros2_ws/install/setup.bash
 ros2 launch diffdrive diffdrive.launch.py
 ```
 
-Käyttämällä ROS2 vakiopakettien mukana tulevan ``tf2_tools``:in ``view_frames`` sovellusta voit saada käsityksen järjestelmässäsi olevien TF-kehysten hierarkiasta ja suhteista. Koska olet julkaissut robottisi URDF-mallin, voit tarkastella näitä kehyksiä, jotka URDF määrittelee, robotin runkoon ja pyöriin liittyen.
+Using the `view_frames` application from `tf2_tools`, which comes with ROS2 standard packages, you can get an understanding of the hierarchy and relationships of the TF frames in your system. Since you have published your robot's URDF model, you can examine these frames, which the URDF defines, related to the robot's body and wheels.
 
 ```bash
 ros2 run tf2_tools view_frames -o robotframes
 
-# Käytetään evince -pdf lukijaa
+# Use evince -pdf reader
 evince robotframes.pdf
 ```
 
-![kääntösäde](kuvat/frames1.png)
+![turning radius](kuvat/frames1.png)
 
-Mitä enemmän robotissa on osia sitä monimutkaisempi TF-puusta tulee.
-![kääntösäde](kuvat/complexurdf.jpg)
+The more parts a robot has, the more complex the TF tree becomes.
+![turning radius](kuvat/complexurdf.jpg)
 
-Ja miltä tuo malli näyttää käytännössä niin sitä voimme tarkemmin tarkastella RVIzissa.
+And what that model looks like in practice, we can examine in more detail in RViz.
 
-Käynnistä RVIz
+Start RViz
 
 ```bash
 rviz2
 ```
 
-RViz:ssa tulisi nyt näkyä robotin malli, kun lisäät RobotModel-visualisointityökalun ja asetat sen kuuntelemaan oikeaa ``robot_description`` -topicia. On tärkeää varmistaa, että URDF-tiedoston rakenteet ja parametrit on määritelty oikein, jotta mallin visualisointi vastaa odotuksia ja näyttää oheisen kuvan mukaiselta.
+In RViz, the robot model should now be visible when you add the RobotModel visualization tool and set it to listen to the correct `robot_description` topic. It is important to ensure that the structures and parameters of the URDF file are defined correctly so that the model's visualization meets expectations and looks like the image below.
 
+![turning radius](kuvat/rviz_urdf.png)
 
-![kääntösäde](kuvat/rviz_urdf.png)
-
--
-Nomga Oy - SeAMK - ROS 2 ja moottorinohjaus: PWM-signaalista robottien liikkeenhallintaan
+- Nomga Oy - SeAMK - ROS 2 and motor control: From PWM signal to robot motion control

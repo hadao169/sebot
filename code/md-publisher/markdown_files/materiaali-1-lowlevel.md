@@ -1,131 +1,134 @@
-## Moottorinohjaus
+## Motor Control
 
-### Yleiskuvaus
+### Overview
 
-![ohjain ja moottorit](kuvat/yleiskuva.png)
+![controller and motors](kuvat/yleiskuva.png)
 
-- Raspberry PI 5, [esimerkiksi Botland](https://botland.store/raspberry-pi-5-modules-and-kits/23905-raspberry-pi-5-8gb-5056561803326.html). Myös vanhemmat Raspberryt soveltuvat hyvin.
-- [Raspberry virtalähde](https://botland.store/raspberry-pi-5-power-supply/23906-raspberry-pi-27w-usb-c-power-supply-official-51v-5a-psu-for-raspberry-pi-5-white-5056561803401.html) Robottia on hyvä pitää verkkovirrassa kehitysvaiheen ajan.
-- [32GB muistikortti](https://botland.store/raspberry-pi-memory-cards/25873-raspberry-microsd-32-gb-memory-card-5056561804200.html)
+- Raspberry PI 5, [for example Botland](https://botland.store/raspberry-pi-5-modules-and-kits/23905-raspberry-pi-5-8gb-5056561803326.html). Older Raspberry Pis are also well suited.
+- [Raspberry power supply](https://botland.store/raspberry-pi-5-power-supply/23906-raspberry-pi-27w-usb-c-power-supply-official-51v-5a-psu-for-raspberry-pi-5-white-5056561803401.html) It is good to keep the robot on mains power during the development phase.
+- [32GB memory card](https://botland.store/raspberry-pi-memory-cards/25873-raspberry-microsd-32-gb-memory-card-5056561804200.html)
 - [Arduino Micro](https://botland.store/arduino-basic-boards/1481-arduino-micro-module-a000053-7630049200159.html)
-- [USB A - Micro USB](https://botland.store/usb-20-cables/17430-cable-microusb-b-usb-a-20-hi-speed-015m-black-4040849957369.html) Raspberryn ja Arduinon sarjaporttiliikennettä varten
-- [Moottoriohjain L293D](https://botland.store/drivers-for-dc-motors/176-l293d-two-channel-36v-06a-motor-driver-5pcs-5904422350253.html)
-- 2 x [DC-moottori vaihteistolla ja enkooderilla 12VDC](https://www.aliexpress.com/item/1005006217803283.html?spm=a2g0o.productlist.main.29.31698cddQydl2q&algo_pvid=af0cf6cd-9f25-4eb1-b422-3434cb6787d7&algo_exp_id=af0cf6cd-9f25-4eb1-b422-3434cb6787d7-14&pdp_ext_f=%7B%22order%22%3A%2232%22%2C%22eval%22%3A%221%22%7D&pdp_npi=4%40dis%21EUR%2110.51%218.41%21%21%2184.99%2167.99%21%4021038df617443630303392462edc8c%2112000042604759092%21sea%21FI%216207330698%21X&curPageLogUid=twZpCBgxq1fC&utparam-url=scene%3Asearch%7Cquery_from%3A)
-- [Stepdown converter säädettävä jännitteenalentaja 5A 25W](https://botland.store/converters-step-down/8103-step-down-voltage-regulator-xl4015-13v-36v-5a-5904422336202.html)
-- [USB C kaapeli](https://botland.store/usb-c-cables/18762-green-cell-powerstream-usb-type-c-usb-type-c-quick-charge-cable-12-m-black-5907813963599.html) virtajohdoksi jännitteenalentimen ja Raspberryn väliin
-- [3s (12,6V) LiPo akku](https://botland.store/battery-li-half-3s-111-v/2394-li-pol-dualsky-800mah-25c-3s-111v-eco-s-package-6941047104662.html). Isompi akku on eduksi jos robottia haluaa käyttää pitkästi akkuvirralla. Huomaa, että tämän ohjeen mukaiset moottorit eivät kestä yli 3S lipo akkuja, eli esimerkiksi 16,8V 4S akut vaativat erilaiset moottorit.
+- [USB A - Micro USB](https://botland.store/usb-20-cables/17430-cable-microusb-b-usb-a-20-hi-speed-015m-black-4040849957369.html) for serial communication between Raspberry and Arduino
+- [Motor driver L293D](https://botland.store/drivers-for-dc-motors/176-l293d-two-channel-36v-06a-motor-driver-5pcs-5904422350253.html)
+- 2 x [DC motor with gearbox and encoder 12VDC](https://www.aliexpress.com/item/1005006217803283.html?spm=a2g0o.productlist.main.29.31698cddQydl2q&algo_pvid=af0cf6cd-9f25-4eb1-b422-3434cb6787d7&algo_exp_id=af0cf6cd-9f25-4eb1-b422-3434cb6787d7-14&pdp_ext_f=%7B%22order%22%3A%2232%22%2C%22eval%22%3A%221%22%7D&pdp_npi=4%40dis%21EUR%2110.51%218.41%21%21%2184.99%2167.99%21%4021038df617443630303392462edc8c%2112000042604759092%21sea%21FI%216207330698%21X&curPageLogUid=twZpCBgxq1fC&utparam-url=scene%3Asearch%7Cquery_from%3A)
+- [Stepdown converter adjustable voltage reducer 5A 25W](https://botland.store/converters-step-down/8103-step-down-voltage-regulator-xl4015-13v-36v-5a-5904422336202.html)
+- [USB C cable](https://botland.store/usb-c-cables/18762-green-cell-powerstream-usb-type-c-usb-type-c-quick-charge-cable-12-m-black-5907813963599.html) as power cable between voltage reducer and Raspberry
+- [3s (12.6V) LiPo battery](https://botland.store/battery-li-half-3s-111-v/2394-li-pol-dualsky-800mah-25c-3s-111v-eco-s-package-6941047104662.html). A larger battery is beneficial if you want to use the robot with battery power for a long time. Note that the motors according to this guide do not tolerate more than 3S LiPo batteries, i.e., 16.8V 4S batteries, for example, require different motors.
 
-Jos piirilevyn tekee itse, voi tarvita myös oheisia (tai niiden kaltaisia, suunnittelusi mukaan) osia
-- [Juotoslevyt](https://www.aliexpress.com/item/1005007014530064.html?spm=a2g0o.productlist.main.45.6c8b272b52aYQS&algo_pvid=d0078849-9223-47ab-a4a2-498410346850&algo_exp_id=d0078849-9223-47ab-a4a2-498410346850-42&pdp_ext_f=%7B%22order%22%3A%229%22%2C%22eval%22%3A%221%22%7D&pdp_npi=4%40dis%21EUR%218.49%212.80%21%21%2167.57%2122.28%21%40211b876e17484499413794147e29d4%2112000039073325488%21sea%21FI%216207330698%21X&curPageLogUid=f3axRd5dcNw9&utparam-url=scene%3Asearch%7Cquery_from%3A)
-- [Riviliittimet](https://www.tme.eu/fi/en/details/dg128-5.0-02p14/pcb-terminal-blocks/degson-electronics/dg128-5-0-02p-14/)
-- [Headerit](https://botland.store/connectors-goldpin/8505-socket-1x20pin-254mm-5904422311780.html)
-- [M2.5 Korokkeet](https://www.tme.eu/fi/en/details/tfm-m2.5x10_dr222o/metal-spacers/dremec/222x10of/)
-- [M2.5 ruuvit](https://www.tme.eu/fi/en/details/b2.5x6_bn15857/bolts/bossard/3108702/)
-Lisäksi sopivia johtimia, LEDeja ym.
+If you make the circuit board yourself, you may also need the following (or similar, according to your design) parts
 
-![https://i.pinimg.com/originals/6b/b7/9e/6bb79e8a76dcf47cfbf6a1a6f38ac640.png](kuvat/simple.png) 
+- [Solder boards](https://www.aliexpress.com/item/1005007014530064.html?spm=a2g0o.productlist.main.45.6c8b272b52aYQS&algo_pvid=d0078849-9223-47ab-a4a2-498410346850&algo_exp_id=d0078849-9223-47ab-a4a2-498410346850-42&pdp_ext_f=%7B%22order%22%3A%229%22%2C%22eval%22%3A%221%22%7D&pdp_npi=4%40dis%21EUR%218.49%212.80%21%21%2167.57%2122.28%21%40211b876e17484499413794147e29d4%2112000039073325488%21sea%21FI%216207330698%21X&curPageLogUid=f3axRd5dcNw9&utparam-url=scene%3Asearch%7Cquery_from%3A)
+- [Terminal blocks](https://www.tme.eu/fi/en/details/dg128-5.0-02p14/pcb-terminal-blocks/degson-electronics/dg128-5-0-02p-14/)
+- [Headers](https://botland.store/connectors-goldpin/8505-socket-1x20pin-254mm-5904422311780.html)
+- [M2.5 Spacers](https://www.tme.eu/fi/en/details/tfm-m2.5x10_dr222o/metal-spacers/dremec/222x10of/)
+- [M2.5 screws](https://www.tme.eu/fi/en/details/b2.5x6_bn15857/bolts/bossard/3108702/)
+  In addition, suitable wires, LEDs, etc.
 
-Kahdella pyörällä liikkuvan robotin liike perustuu renkaiden moottoreiden toimintaan, jotka saavat ohjeensa ylemmältä tasolta. ROS-ympäristössä nämä ohjeet annetaan yleensä cmd_vel-viesteissä, joissa määritellään robotin lineaarinen nopeus ja pyörimisnopeus. Näitä tietoja hyödyntäen robottiin kytketty ROS-node laskee kullekin renkaalle tarvittavat pyörimissuunnat ja nopeudet, jotka välitetään moottoriohjaimelle.
+![https://i.pinimg.com/originals/6b/b7/9e/6bb79e8a76dcf47cfbf6a1a6f38ac640.png](kuvat/simple.png)
 
-Tämä laskenta edellyttää seuraavia tietoja:
+The movement of a two-wheeled robot is based on the operation of the wheel motors, which receive their instructions from a higher level. In the ROS environment, these instructions are usually given in cmd_vel messages, which define the robot's linear and angular velocities. Utilizing this information, a ROS node connected to the robot calculates the necessary rotation directions and speeds for each wheel, which are then transmitted to the motor controller.
 
-- Renkaiden halkaisija: Vaikuttaa lineaarisen nopeuden ja kulmanopeuden väliseen suhteeseen.
-- Encoderin pulssimäärä per kierros: Tarvitaan tarkkaan liikkeen mittaamiseen ja nopeuden säätöön.
-- Renkaiden välinen etäisyys (raideleveys): Vaikuttaa robotin kääntymisen laskentaan.
+This calculation requires the following information:
 
-Moottoriohjain käyttää H-siltaa, kuten L293D-piiriä, renkaiden pyörimissuunnan ohjaamiseen, ja PWM-signaalia renkaiden pyörimisnopeuden säätöön. Vertaamalla encoderien signaalia asetettuihin arvoihin moottoriohjain saavuttaa tarkan nopeudensäätelyn PID-säätimen avulla, mikä mahdollistaa sekä suoran että pyörivän liikkeen tarkan ja hallitun toteutuksen.
+- Wheel diameter: Affects the relationship between linear and angular velocity.
+- Encoder pulse count per revolution: Needed for accurate movement measurement and speed control.
+- Distance between wheels (track width): Affects the calculation of the robot's turning.
 
-**DC-moottorin ohjaus ja Arduino:**
+The motor controller uses an H-bridge, such as the L293D chip, to control the rotation direction of the wheels, and a PWM signal to adjust the rotation speed of the wheels. By comparing the encoder signal to the set values, the motor controller achieves accurate speed control using a PID controller, which enables precise and controlled execution of both straight and rotating movements.
 
-Robotin moottorien ohjaukseen käytetään L293D H-siltapiiriä, joka mahdollistaa kahden moottorin hallinnan samanaikaisesti. Piiri on liitetty Arduino-mikrokontrolleriin, jossa on esimerkkiohjelma moottorien hallintaan. Ohjelma mahdollistaa:
+**DC Motor Control and Arduino:**
 
-- Moottorien ohjauksen suoraan PWM-komentojen avulla.
-- Moottorien ohjauksen PID-säätimen avulla, joka tuottaa PWM-signaalin moottorien nopeuden säätämiseksi.
+The L293D H-bridge chip is used to control the robot's motors, allowing simultaneous control of two motors. The chip is connected to an Arduino microcontroller, which has an example program for motor control. The program allows:
 
-Ohjelma määrittää moottorin pyörimissuunnan PID-säätimen tai PWM-komennon tuottaman arvon perusteella:
+- Motor control directly using PWM commands.
+- Motor control using a PID controller, which produces a PWM signal to adjust the motor speed.
 
-- Positiivinen arvo ohjaa moottorin pyörimään eteenpäin.
-- Negatiivinen arvo kääntää moottorin suunnan taaksepäin.
+The program determines the motor's rotation direction based on the value produced by the PID controller or PWM command:
 
-Tämä järjestelmä yhdistää ROS-ympäristön komennot ja Arduino-pohjaisen ohjauksen, mikä mahdollistaa tarkan ja joustavan robotin liikkeenhallinnan sekä nopeuden että suunnan osalta.
+- A positive value causes the motor to rotate forward.
+- A negative value reverses the motor's direction.
 
-### Laitteisto
+This system combines ROS environment commands and Arduino-based control, enabling precise and flexible robot motion control in terms of both speed and direction.
 
-![ohjain ja moottorit](kuvat/device2.png)
+### Hardware
+
+![controller and motors](kuvat/device2.png)
 
 Arduino Micro, L293D, [DC6-24v Gear Motor with Encoder](https://www.elecrow.com/dc624v-gear-motor-with-encoder-p-1616.html)
 
-### Kytkentä
+### Wiring
 
-Allaolevassa taulukossa on selvitetty kytkennät Arduino Micron, L293D piirin ja moottoreiden välillä.
+The table below explains the connections between the Arduino Micro, L293D chip, and motors.
 
  <table>
 <tr>
 <td valign="top">
-<strong>MOOTTORIN JOHTOJEN KYTKENNÄT</strong>
+<strong>MOTOR WIRE CONNECTIONS</strong>
 
-| moottori johdin  | toiminta  | kohde  | nasta       |
-|-----------|------------|----------|-----------------|
-| valkoinen | motor -    | L293D    | M#1->3, M#2->11 |
-| sininen   | sensor +   | Arduino  |   +5V           |
-| vihreä    | A          | Arduino  | M#1->3, M#2->2  |
-| keltainen | B          | Arduino  | M#1->4, M#2->9  |
-| musta     | sensor gnd | Arduino  | gnd             |
-| punainen  | motor +    | L293D    | M#1->6, M#2->14 |
+| motor wire | function   | target  | pin             |
+| ---------- | ---------- | ------- | --------------- |
+| white      | motor -    | L293D   | M#1->3, M#2->11 |
+| blue       | sensor +   | Arduino | +5V             |
+| green      | A          | Arduino | M#1->3, M#2->2  |
+| yellow     | B          | Arduino | M#1->4, M#2->9  |
+| black      | sensor gnd | Arduino | gnd             |
+| red        | motor +    | L293D   | M#1->6, M#2->14 |
 
-![https://i.pinimg.com/originals/6b/b7/9e/6bb79e8a76dcf47cfbf6a1a6f38ac640.png](kuvat/arduinopins.png) Arduino Micron kytkennät. Punaiset ympyröinnit osoittavat käytössä olevat nastat.
+![https://i.pinimg.com/originals/6b/b7/9e/6bb79e8a76dcf47cfbf6a1a6f38ac640.png](kuvat/arduinopins.png) Arduino Micro connections. Red circles indicate used pins.
 
 </td><td>
-<strong>H-SILTA L293D KYTKENNÄT</strong>
+<strong>H-BRIDGE L293D CONNECTIONS</strong>
 
-| L293D nasta| toiminta      | kohde       |  nasta / johdin   |
-|------------|---------------|-------------|-------------------|
-| 1          | enable1       | Arduino     |      5            |
-| 2          | input1        | Arduino     |      6            |
-| 3          | output1       | Moottori #1 | valkoinen         |
-| 4          | gnd           | Arduino     | gnd               |
-| 5          | gnd           | Arduino     | gnd               |
-| 6          | output2       | Moottori #1 | punainen          |
-| 7          | input2        | Arduino     |    8              |
-| 8          | Vs            | Akku        | +12V (ajojännite) |
-| 9          | enable2       | Arduino     |    10             |
-| 10         | input3        | Arduino     |    11             |
-| 11         | output3       | Moottori #2 | valkoinen         |
-| 12         | gnd           | Arduino     | gnd               |
-| 13         | gnd           | Arduino     | gnd               |
-| 14         | output4       | Moottori #2 | punainen          |
-| 15         | input4        | Arduino     |    12             |
-| 16         | Vss.          | Arduino     |   +5V             |
+| L293D pin | function | target   | pin / wire           |
+| --------- | -------- | -------- | -------------------- |
+| 1         | enable1  | Arduino  | 5                    |
+| 2         | input1   | Arduino  | 6                    |
+| 3         | output1  | Motor #1 | white                |
+| 4         | gnd      | Arduino  | gnd                  |
+| 5         | gnd      | Arduino  | gnd                  |
+| 6         | output2  | Motor #1 | red                  |
+| 7         | input2   | Arduino  | 8                    |
+| 8         | Vs       | Battery  | +12V (drive voltage) |
+| 9         | enable2  | Arduino  | 10                   |
+| 10        | input3   | Arduino  | 11                   |
+| 11        | output3  | Motor #2 | white                |
+| 12        | gnd      | Arduino  | gnd                  |
+| 13        | gnd      | Arduino  | gnd                  |
+| 14        | output4  | Motor #2 | red                  |
+| 15        | input4   | Arduino  | 12                   |
+| 16        | Vss.     | Arduino  | +5V                  |
 
 </td>
 </tr>
 </table>
 
-#### Komennot
-Arduinoon on ohjelmoitu seuraavat komennot:
+#### Commands
 
-1. Suora säätö: ``PWM;100;100;``
-2. PID säätö: ``SPD;100;100;``
-3. PID arvot: ``PID;0.7;0.003;0.0;``
-4. Nollaa enkooderit: ``ZERO;``
-5. Säädä alive arvoa (0 = pois): ``ALIVE;3;``
+The following commands are programmed into the Arduino:
 
-PWM ja SPD -arvot vaihtelevat välillä -255 – +255. Nämä arvot itsessään eivät edusta nopeutta metreinä sekunnissa (m/s), vaan muunnos tapahtuu ROS-nodessa. Pyörimissuunta määräytyy arvon etumerkin perusteella.
+1. Direct control: `PWM;100;100;`
+2. PID control: `SPD;100;100;`
+3. PID values: `PID;0.7;0.003;0.0;`
+4. Reset encoders: `ZERO;`
+5. Adjust alive value (0 = off): `ALIVE;3;`
 
-Kaikki komennot palauttavat stringin:  ``encoder1;encoder2;rpm1;rpm2;pwm1;pwm2``
+PWM and SPD values range from -255 to +255. These values themselves do not represent speed in meters per second (m/s), but the conversion occurs in the ROS node. The direction of rotation is determined by the sign of the value.
 
-### Suora PWM ohjaus
-``PWM;64;191;`` tarkoittaa, että moottorille #1 syötetään 25 %:n PWM-signaalia ja moottorille #2 75 %:n PWM-signaalia. Kun nämä signaalit kulkevat L293D-piirin läpi, piiri vahvistaa ne syöttöjännitteensä perusteella, jolloin saavutetaan moottoreille sopiva jännitetaso. L293D toimii tässä signaalivahvistimena ja ohjauselementtinä.
+All commands return a string: `encoder1;encoder2;rpm1;rpm2;pwm1;pwm2`
+
+### Direct PWM control
+
+`PWM;64;191;` means that motor #1 is supplied with a 25% PWM signal and motor #2 with a 75% PWM signal. When these signals pass through the L293D chip, the chip amplifies them based on its supply voltage, thus achieving a suitable voltage level for the motors. The L293D acts as a signal amplifier and control element here.
 
 ![https://docs.arduino.cc/learn/microcontrollers/analog-output/](kuvat/mypwm.png)
 
-Moottorin maksiminopeus saavutetaan PWM-arvolla 255, mutta matalin nopeus riippuu useista tekijöistä, kuten moottorin ominaisuuksista, kuormasta, PWM-signaalin laadusta ja ympäristöolosuhteista. Tämä arvo voidaan määrittää käytännön testeillä ja tarvittaessa optimoida erilaisin menetelmin.
+The maximum motor speed is achieved with a PWM value of 255, but the lowest speed depends on several factors, such as motor characteristics, load, PWM signal quality, and environmental conditions. This value can be determined by practical tests and, if necessary, optimized by various methods.
 
-Maksimikiihtyvyys saavutetaan, kun moottori lähtee paikallaanolotilasta (PWM = 0) ja sille asetetaan heti maksimisyöttö (PWM = 255). Tällöin moottori toimii täydellä teholla alusta alkaen, jolloin kiihtyvyys on suurimmillaan.
+Maximum acceleration is achieved when the motor starts from a standstill (PWM = 0) and is immediately given maximum input (PWM = 255). In this case, the motor operates at full power from the beginning, resulting in maximum acceleration.
 
-Testaamme ohjainta yksinkertaisesti lähettämällä halutun pulssisuhteen (duty cycle), jolloin moottorit pyörivät tasajännitteellä ilman takaisinkytkentää. Tämä mahdollistaa ohjausjärjestelmän perustoimintojen tarkistamisen ennen suljetun piirin hallinnan käyttöönottoa.
+We test the controller simply by sending the desired duty cycle, which causes the motors to rotate with a constant voltage without feedback. This allows checking the basic functions of the control system before implementing closed-loop control.
 
-Liitämme moottoriohjaimen USB-kaapelilla tietokoneeseen, jolloin sitä voidaan ohjata sarjaliikenteen (serial communication) avulla. Tämä yhteys mahdollistaa yksinkertaisen ja luotettavan tavan lähettää ohjauskomentoja moottoriohjaimelle.
+We connect the motor controller to the computer with a USB cable, allowing it to be controlled via serial communication. This connection provides a simple and reliable way to send control commands to the motor controller.
 
 **pwm.py**
 
@@ -136,42 +139,43 @@ import time
 try:
     speed = 100
     arduino = serial.Serial("/dev/ttyACM0", 115200, timeout=1)
-    time.sleep(2.0) # odotetaan etta linja on varmasti auki
-    arduino.write(("PWM;%s;%s;\n"%(speed,speed)).encode()) #annetaan pwm ohje kummallekin moottorille
+    time.sleep(2.0) # wait for the line to be surely open
+    arduino.write(("PWM;%s;%s;\n"%(speed,speed)).encode()) # give pwm instruction to both motors
     if arduino.isOpen():
         while(True):
-            print("Moottorit pyorivat yha")
+            print("Motors are still rotating")
             time.sleep(3.0)
-            
+
 except KeyboardInterrupt:
-        print("\nOhjelma keskeytetty, pysaytetaan moottorit.")
+        print("\nProgram interrupted, stopping motors.")
         arduino.write(("PWM;0;0").encode())
-        
+
 finally:
-        print("Lopetetaan ohjelma")
+        print("Exiting program")
 ```
 
-Kummallekin moottorille lähetetään ohjausarvo 100, joka vastaa noin 40 % pulssisuhdetta ja pyörittää moottoreita samaan suuntaan. On kuitenkin tärkeää huomioida, että jos moottorit on asennettu robottiin differentiaaliajotyyppisesti (vastakkain), tämä ohjausarvo saa moottorit pyörimään vastakkaisiin suuntiin, jolloin robotti pyörii paikallaan eikä liiku eteen- tai taaksepäin. Tämä ilmiö on oleellista huomioida moottoreiden ja ohjausarvojen synkronoinnissa.
+For both motors, a control value of 100 is sent, which corresponds to about a 40% duty cycle and rotates the motors in the same direction. However, it is important to note that if the motors are installed in the robot in a differential drive manner (opposite each other), this control value will cause the motors to rotate in opposite directions, causing the robot to spin in place instead of moving forward or backward. This phenomenon is essential to consider when synchronizing motors and control values.
 
 ```bash
-# Ajetaan ohjelma komennolla
+# Run the program with the command
 python3 pwm.py
 ```
-##### Jos mitään ei tapahdu, tarkista seuraavat asiat:
 
-1. Liitokset: Varmista, että kaikki liitokset ovat tiukasti kiinni, erityisesti USB-kaapeli ja mahdolliset moottoriohjaimen virtakaapelit.
-2. Virransyöttö: Tarkista, että moottoriohjaimeen on kytketty virta ja että virtalähde on toiminnassa.
-3. Ohjausarvo: Moottorityypistä ja sen ominaisuuksista riippuen annettu ohjausarvo (esim. 100) saattaa olla liian pieni, jotta moottori jaksaisi pyöriä. Kokeile kasvattaa ohjausarvoa asteittain ja tarkkaile, alkaako moottori toimia.
+##### If nothing happens, check the following:
 
-Jos ongelmat jatkuvat, tarkista myös, että käytettävä sarjaliikenneprotokolla ja konfiguraatiot (esim. baud rate) ovat oikeat ja yhteensopivat moottoriohjaimen asetusten kanssa.
+1. Connections: Ensure all connections are tight, especially the USB cable and any motor driver power cables.
+2. Power supply: Check that the motor driver is powered and that the power supply is working.
+3. Control value: Depending on the motor type and its characteristics, the given control value (e.g., 100) may be too small for the motor to rotate. Try increasing the control value gradually and observe if the motor starts to operate.
 
-### Takaisinkytkentä
+If problems persist, also check that the serial communication protocol and configurations (e.g., baud rate) used are correct and compatible with the motor driver settings.
 
-Teemme koodiin pienen lisäyksen, jonka avulla tulostamme moottoriohjaimelta saadun vastauksen. Vastaus saapuu muodossa:
+### Feedback
 
-```motor1_encoder;motor2_encoder;motor1_speed;motor2_speed;motor1_pwm_set;motor2_pwm_set```
+We will make a small addition to the code to print the response received from the motor controller. The response arrives in the format:
 
-Tämä lisäys mahdollistaa sen, että voimme tarkistaa moottorien encoder-arvot, nopeudet ja PWM-asetukset suoraan koodin tulosteista. Koodissa on myos kommenttimerkilla poistettu rivi, joka saa moottorien nopeuden vaihtelemaan satunnaisesti mielenkiinnon vuoksi.
+`motor1_encoder;motor2_encoder;motor1_speed;motor2_speed;motor1_pwm_set;motor2_pwm_set`
+
+This addition allows us to check the motor encoder values, speeds, and PWM settings directly from the code output. The code also has a commented-out line that causes the motor speeds to vary randomly for interest.
 
 ```python
 import serial
@@ -184,25 +188,25 @@ try:
     time.sleep(2.0)
     if arduino.isOpen():
         while(True):
-            # speed += random.randint(-10,10) # Ota kommenttimerkki pois, jos haluat kokeilla nopeuden muuttamista satunnaisesti.
-            print(f"Vaihdetaan nopeus = {speed}")
+            # speed += random.randint(-10,10) # Uncomment if you want to try changing the speed randomly.
+            print(f"Changing speed = {speed}")
             arduino.write(("PWM;%s;%s;\n"%(speed,speed)).encode())
-            time.sleep(0.5) # nöytteenottovälin pituus
+            time.sleep(0.5) # sampling interval length
 
             if arduino.inWaiting()>0:
                 answer=arduino.readline()
                 print(answer)
                 arduino.flushInput()
-            
+
 except KeyboardInterrupt:
-        print("\nOhjelma keskeytetty, pysaytetaan moottorit.")
+        print("\nProgram interrupted, stopping motors.")
         arduino.write(("PWM;0;0").encode())
-        
+
 finally:
-        print("Lopetetaan ohjelma")
+        print("Exiting program")
 ```
 
-Ja kun ajamme ohjelman, saamme vastauksia
+And when we run the program, we get responses
 
 ```
 python pwm.py
@@ -226,27 +230,27 @@ b'-12312;-11508;182;169;100;100\n'
 b'-13102;-12245;182;170;100;100\n'
 ```
 
-Saaduista tiedoista voidaan muodostaa käyrät, jotka selkeyttävät tulosten tulkintaa. Käyrien avulla voimme varmistaa, että molemmat encoderit toimivat odotetusti, ja havaita, että moottori #2 pyörii hieman hitaammin annetulla ohjausarvolla, mikä johtaa myös hieman lyhyempään kuljettuun matkaan. Visualisointi tarjoaa selkeän tavan arvioida järjestelmän toimintaa sekä tunnistaa mahdolliset poikkeamat tai hienosäätöä vaativat kohdat.
+From the acquired data, curves can be formed that clarify the interpretation of the results. With the help of the curves, we can verify that both encoders are functioning as expected, and observe that motor #2 rotates slightly slower with the given control value, which also leads to a slightly shorter travelled distance. Visualization provides a clear way to evaluate the system's operation and identify any potential deviations or areas requiring fine-tuning.
 
-Arvojen analysointi on helppoa kopioimalla ne Excel-taulukkoon ja luomalla viivagraafi. Kokeilemalla eri arvoja voit havainnoida, miten ne vaikuttavat moottorin pyörimiseen.
+Analyzing the values is easy by copying them to an Excel spreadsheet and creating a line graph. By trying different values, you can observe how they affect motor rotation.
 
 ![pwm](kuvat/pwm.png)
 
-Mikäli encoder-arvot eivät päivity, vaikka moottori pyörii, tarkista kytkennät huolellisesti. Jos encoder-arvot näyttävät väärään suuntaan (esim. moottorit pyörivät samaan suuntaan mutta arvot vähenevät yhdellä encoderilla), signaalit voivat olla kytketty ristiin. Korjaa tällöin kytkennät vaihtamalla väärin kytketyt signaalijohdot oikein päin.
+If the encoder values do not update even though the motor is rotating, carefully check the connections. If the encoder values appear in the wrong direction (e.g., motors rotate in the same direction but values decrease for one encoder), the signals may be crossed. In this case, correct the connections by swapping the incorrectly connected signal wires.
 
-### PID Säädin
+### PID Controller
 
-PID säätimen toimintaan voit tutustua tutustumalla arduinoissa olevaan koodiin.
+You can learn about the operation of the PID controller by examining the code in Arduino.
 
 ![pwm](kuvat/pid.png)
 
-Kun on varmistettu, että moottori pyörii odotetusti PWM-ohjauksella ja encoderit palauttavat oikeanlaisia arvoja, voidaan siirtyä käyttämään PID-säädintä. PID-säätimen avulla saavutamme tarkemman nopeudenhallinnan, jolloin moottorit pyörivät halutulla nopeudella riippumatta kuormituksesta tai muista häiriötekijöistä. Tämä vaihe mahdollistaa järjestelmän suorituskyvyn optimoinnin ja luo perustan tarkemmalle ohjaukselle.
+Once it has been confirmed that the motor rotates as expected with PWM control and the encoders return correct values, the PID controller can be used. With the PID controller, we achieve more accurate speed control, so that the motors rotate at the desired speed regardless of load or other disturbances. This phase enables optimization of system performance and lays the foundation for more precise control.
 
-SPD;127;127; tarkoittaa, että kumpikin moottori pyrkii pitämään nopeuden 127
+SPD;127;127; means that both motors try to maintain a speed of 127
 
-Moottoriohjaimessa on SPD-komennolle sisäänrakennettu turvaominaisuus, joka pysäyttää moottorin automaattisesti, jos se ei saa uutta ohjetta määritetyn ajan sisällä (oletuksena 3 sekuntia). Tämä ominaisuus varmistaa, että moottori ei jää pyörimään hallitsemattomasti mahdollisten virhetilanteiden tai ylemmän tason ohjausjärjestelmän häiriöiden vuoksi. Näin moottori pysähtyy turvallisesti, mikä lisää järjestelmän luotettavuutta ja suojaa sekä laitteistoa että ympäristöä.
+The motor controller has a built-in safety feature for the SPD command that automatically stops the motor if it does not receive a new instruction within a specified time (default 3 seconds). This feature ensures that the motor does not continue to rotate uncontrollably due to possible error situations or disturbances in the higher-level control system. In this way, the motor stops safely, which increases the reliability of the system and protects both the hardware and the environment.
 
-Voimme tehdä yksinkertaisen muutoksen korvaamalla PWM-komennon SPD-komennolla, jolloin moottoriohjain huolehtii itse PWM-asetusten laskemisesta saavuttaakseen halutun nopeuden.
+We can make a simple change by replacing the PWM command with the SPD command, whereby the motor controller itself takes care of calculating the PWM settings to achieve the desired speed.
 
 ```python
 import serial
@@ -259,21 +263,21 @@ try:
 	if arduino.isOpen():
 	  while True:
 	    arduino.write(("SPD;%s;%s;\n"%(speed,speed)).encode())
-	    time.sleep(0.5) # naytteenottovali, voit kokeilla miten lyhyempi vali vaikuttaa ohjautuvuuteen.
+	    time.sleep(0.5) # sampling interval, you can experiment how a shorter interval affects controllability.
 
 	    if arduino.inWaiting()>0:
 	      answer=arduino.readline()
 	      print(answer)
 	      arduino.flushInput()
-	      
+
 except KeyboardInterrupt:
-	print("Pysaytetaan moottorit")
+	print("Stopping motors")
 	arduino.write(("SPD;0;0").encode())
 finally:
-	print("Lopetetaan ohjelma")
+	print("Exiting program")
 ```
 
-Ja vastauksen saamme samalla tavalla kuin PWM-komennon kanssa, mutta nyt voimme suoraan havaita, että moottorin nopeus pyrkii pysymään annetussa arvossa, ja PWM-arvo vaihtelee automaattisesti moottoriohjaimen toimesta. Tämä vahvistaa, että moottoriohjain säätelee PWM-arvoja dynaamisesti kompensoidakseen kuorman tai muiden olosuhteiden muutoksia, mikä johtaa tasaisempaan nopeudenhallintaan.
+And we get the response in the same way as with the PWM command, but now we can directly observe that the motor speed tends to stay at the given value, and the PWM value automatically varies by the motor controller. This confirms that the motor controller dynamically adjusts the PWM values to compensate for changes in load or other conditions, resulting in smoother speed control.
 
 ```
 b'-510;-498;141;135;20;32\n'
@@ -297,25 +301,24 @@ b'-7399;-7393;101;99;56;61\n'
 
 ![pwm](kuvat/spd.png)
 
-Kun vertaamme tasaisen PWM-säädön käyriä PID-säätimeltä saatujen käyrien kanssa, voimme havaita merkittävän parannuksen: PID-säätimen avulla moottorien nopeudet pysyvät tarkemmin asetetussa arvossa. Lisäksi näemme, että PWM-asetusarvot eroavat moottorien välillä siten, että hitaammin pyörivä moottori #2 vaatii hieman enemmän tehoa pysyäkseen samassa vauhdissa moottorin #1 kanssa. Tämä osoittaa PID-säätimen tehokkuuden nopeuksien tasaamisessa ja moottorien yksilöllisten eroavaisuuksien kompensoinnissa.
+When we compare the curves of constant PWM control with the curves obtained from the PID controller, we can observe a significant improvement: with the PID controller, the motor speeds remain more accurately at the set value. In addition, we see that the PWM set values differ between the motors such that the slower-rotating motor #2 requires slightly more power to keep up with motor #1. This demonstrates the effectiveness of the PID controller in equalizing speeds and compensating for individual differences between motors.
 
-Käyrän alussa näkyvä omituisuus, jossa nopeus on suuri ja PWM-arvo pieni, johtuu siitä, että PID-säätimen ensimmäiset säätöarvot eivät ehdi tallentua kaavioon, kun käytämme 0,5 sekunnin viivettä tulosten tulostamisessa. Tämä viive aiheuttaa sen, että kaavion alkuhetken data ei täysin heijasta säätimen todellista käyttäytymistä.
+The oddity at the beginning of the curve, where the speed is high and the PWM value is small, is due to the fact that the first control values of the PID controller do not have time to be saved in the chart when we use a 0.5-second delay in printing the results. This delay causes the data at the beginning of the chart not to fully reflect the actual behavior of the controller.
 
-Kun pienennämme näytteenottovälin 0,1 sekuntiin, saamme kyseisen tapahtuman paremmin näkyviin, ja näin PID-säätimen toiminta alkuvaiheessa voidaan analysoida tarkemmin. Tämä auttaa havaitsemaan mahdolliset poikkeamat tai optimointitarpeet.
+When we reduce the sampling interval to 0.1 seconds, we can see this event better, and thus the operation of the PID controller in the initial phase can be analyzed more precisely. This helps to detect possible deviations or optimization needs.
 
 ![pwm](kuvat/spd2.png)
 
-Sovellamme samaa 0,1 sekunnin näytteenottoväliä myös PWM-säädön alussa, jotta saamme paremman käsityksen järjestelmän käyttäytymisestä heti käynnistyksessä. Tämä auttaa vertaamaan PWM-säätöä ja PID-säädintä tarkemmin alusta alkaen ja havaitsemaan esimerkiksi transienttivaiheessa tapahtuvat ilmiöt, kuten moottorin kiihtymisen ja PWM-arvojen muutokset.
+We also apply the same 0.1-second sampling interval at the beginning of the PWM control to get a better understanding of the system's behavior immediately at startup. This helps to compare PWM control and the PID controller more accurately from the beginning and to detect, for example, phenomena occurring in the transient phase, such as motor acceleration and changes in PWM values.
 
 ![pwm](kuvat/pwm2.png)
 
-Kuitenkin on tärkeää huomioida käytetyn moottoriohjaimen rajoitukset: liian tiheä datan kerääminen voi kuormittaa ohjainta ja hidastaa itse PID-säätimen toimintaa. Tällöin järjestelmän suorituskyky voi heikentyä, mikä voi johtaa virheellisiin johtopäätöksiin PID-piirin toimivuudesta. Näin ollen näytteenottovälin valinnassa on löydettävä tasapaino tarkkuuden ja järjestelmän toimivuuden välillä. Jos ohjain alkaa hidastua, tulisi harkita harvempaa näytteenottoa tai optimoida datan keruuta välttämällä turhia pyyntöjä.
+However, it is important to consider the limitations of the motor controller used: collecting data too frequently can overload the controller and slow down the operation of the PID controller itself. In such a case, the system's performance may degrade, which can lead to incorrect conclusions about the functionality of the PID circuit. Therefore, when selecting the sampling interval, a balance must be found between accuracy and system functionality. If the controller starts to slow down, rarer sampling should be considered or data collection should be optimized by avoiding unnecessary requests.
 
-### Vaihtoehtoja
+### Alternatives
 
-Kun tavoitteena on saavuttaa moottoriohjaimelta parempaa suorituskykyä, FPGA (Field Programmable Gate Array) on erinomainen valinta suorittimeksi. FPGA mahdollistaa useiden tehtävien rinnakkaisen suorittamisen, mikä takaa nopean ja tehokkaan toiminnan. Tämä on erityisen hyödyllistä moottoriohjauksen kriittisissä tehtävissä, kuten PID-säätimessä, jossa suorituskyvyn on pysyttävä vakaana ja tarkkana riippumatta muista järjestelmän toiminnoista. FPGA:n rinnakkaisuus tekee siitä ihanteellisen valinnan korkean suorituskyvyn vaativiin sovelluksiin.
+When the goal is to achieve better performance from the motor controller, an FPGA (Field Programmable Gate Array) is an excellent choice for a processor. An FPGA enables parallel execution of several tasks, which guarantees fast and efficient operation. This is especially useful in critical motor control tasks, such as in a PID controller, where performance must remain stable and accurate regardless of other system functions. The parallelism of the FPGA makes it an ideal choice for high-performance demanding applications.
 
-Jos projektin budjetti sallii, markkinoilla on myös saatavilla laaja valikoima kaupallisia moottoriohjaimia, jotka ovat hyvin testattuja ja toimintavarmoja. Näihin kuuluu yksinkertaisia DC-moottoriohjaimia, tarkkoja servo-ohjaimia ja monipuolisia robotiikan ohjausjärjestelmiä. Useimmat näistä tuotteista tarjoavat kattavan dokumentaation, teknisen tuen ja valmiit integraatiot esimerkiksi ROS-järjestelmään, mikä tekee niistä luotettavan ja helppokäyttöisen ratkaisun. Korkean laadun ja toimintavarmuuden vastapainona on usein korkeampi hinta, joten näiden tuotteiden valinta riippuu projektin tarpeista ja budjetista.
+If the project budget allows, a wide range of commercial motor controllers are also available on the market that are well-tested and reliable. These include simple DC motor controllers, precise servo controllers, and versatile robotics control systems. Most of these products offer comprehensive documentation, technical support, and ready-made integrations, for example, with the ROS system, which makes them a reliable and easy-to-use solution. The trade-off for high quality and reliability is often a higher price, so the choice of these products depends on the project's needs and budget.
 
--
-Nomga Oy - SeAMK - ROS 2 ja moottorinohjaus: PWM-signaalista robottien liikkeenhallintaan
+- Nomga Oy - SeAMK - ROS 2 and motor control: From PWM signal to robot motion control

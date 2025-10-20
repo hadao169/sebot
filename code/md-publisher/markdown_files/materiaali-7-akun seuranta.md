@@ -1,34 +1,32 @@
-## Ekstra: Akun jännitteen seuranta ja hälytysvalo
-LiPo-akun kunto heikkenee nopeasti, jos kennokohtainen jännite laskee liian alas. Jos raja-arvoksi otetaan 3,3V/kenno, niin SeBotissa käytettävän kolmikennoisen akun jännite ei saisi laskea alle noin 10V (ellei käytetä kehittyneempää kennokohtaista jännitteenseurantaa). Kehitetään SeBotin toiminnallisuuksia siten, että jännitteen laskiessa alle annetun tason hälytysvalo syttyy:
-1) Tehdään jännitteenjakokytkentä, jonka avulla Arduino voi lukea moottoritietojen ohella myös akun jännitettä. 
-2) Syötetään tämä tieto osana moottoreiden tilasta kertovaa merkkijonoa Raspberrylle, jossa motordriver-node parsii tiedon osaksi /motor_data topicia. 
-3) Välitetään tieto erillisellä nodella omaan /battery_level topiciinsa ja
-4) seurataan jännitteen tasoa nodella, joka toimittaa tiedon hälytystilan statuksesta /battery_alert topiciin ja sytyttää hälytysvalon.
+## Extra: Battery voltage monitoring and alert light
 
-### Jännitteenjakokytkentä
-Arduinon analogisisääntulonastalle ei saa syöttää yli 5V jännitettä. Akun nimellisjännite on 12V eli se tulee skaalata siten, että 12V jännite näkyy Arduinolle hieman alle 5V jännitteenä. Tämä on kätevintä tehdä yksinkertaisella [jännitteenjakokytkennällä](https://fi.wikipedia.org/wiki/J%C3%A4nnitteen-_ja_virranjakos%C3%A4%C3%A4nt%C3%B6).
+The condition of a LiPo battery deteriorates rapidly if the cell-specific voltage drops too low. If the limit value is set to 3.3V/cell, the voltage of the three-cell battery used in SeBot should not drop below approximately 10V (unless more advanced cell-specific voltage monitoring is used). Let's develop SeBot's functionalities so that if the voltage drops below the set level, an alert light will turn on:
 
-![Jännitteenjako](./kuvat/jannitteenjako.png)
+1. Create a voltage divider circuit that allows the Arduino to read the battery voltage in addition to the motor data.
+2. Feed this information as part of the string reporting the motor status to the Raspberry Pi, where the motordriver-node parses the information as part of the /motor_data topic.
+3. Relay the information with a separate node to its own /battery_level topic and
+4. monitor the voltage level with a node that delivers information about the alert status to the /battery_alert topic and turns on the alert light.
 
-Kuva: Jännitteenjakokytkentä ja tarvittavat laskukaavat.
+### Voltage divider circuit
 
-Vastukset R1 ja R2 tulee valita siten, että niiden keskinäinen suhde antaa jännitteeksi U2 kaikissa tapauksissa alle 5V jännitteen Arduinon nastalle A0. Toiseksi kokonaisvastuksen on syytä olla varsin suuri, jotta tämä "turha" virrankulutus jäisi mahdollisimman pieneksi.
+The Arduino's analog input pin must not be supplied with more than 5V voltage. The nominal voltage of the battery is 12V, so it must be scaled so that a 12V voltage appears as slightly less than 5V on the Arduino's A0 pin. Secondly, the total resistance should be quite large so that this "unnecessary" power consumption remains as small as possible.
 
-Jos vastukseksi R1 valitaan 10 k $\Omega$ ja akun maksimijännite on U = 12,6V, niin laskennallisesti vastuksen R2 tulee olla 6,6 k $\Omega$. Haluamme kuitenkin hieman varmuusmarginaalia, joten hyvä valinta on R2 = 4,7 k $\Omega$. Tällöin U2_max = U_max * R2/(R1+R2) = 4,0 V.
+If 10 k $\Omega$ is chosen for resistor R1 and the maximum battery voltage is U = 12.6V, then computationally, resistor R2 should be 6.6 k $\Omega$. However, we want some safety margin, so a good choice is R2 = 4.7 k $\Omega$. In this case, U2_max = U_max \* R2/(R1+R2) = 4.0 V.
 
 ### Arduino
 
-Lisätään Arduinon motorcontroller.inu-tiedostoon tieto A0-nastan käyttämisestä analogisisääntulona, siltä luetun arvon lukeminen ja skaalaaminen jännitearvoksi ``ReadBatteryVoltage()``-funktiolla ja tämän jännitearvon lähettäminen osana muuta Raspberrylle toimitettavaa merkkijonoa.
+Add to the Arduino's `motorcontroller.ino` file information about using the A0 pin as an analog input, reading the value from it and scaling it to a voltage value with the `ReadBatteryVoltage()` function, and sending this voltage value as part of the other string delivered to the Raspberry Pi.
 
-Halutessasi voit mitata käyttämäsi vastusten resistanssin yleismittarilla jännitemittauksen tuloksen tarkentamiseksi.
+If you wish, you can measure the resistance of the resistors you are using with a multimeter to refine the voltage measurement result.
 
 **/opt/nomga/arduino/motorcontroller/motorcontroller.ino**
+
 ```c
 #include "Motor.h"
 
-const int voltagePin = A0;         // Analoginen sisääntulo nastassa A0
-const float R1 = 9820.0;          // nimellisvastus 10k ohmia
-const float R2 = 4720.0;           // nimellisvastus 4.7k ohmia
+const int voltagePin = A0;         // Analog input on pin A0
+const float R1 = 9820.0;          // nominal resistance 10k ohm
+const float R2 = 4720.0;           // nominal resistance 4.7k ohm
 const float voltageScale = (R1 + R2) / R2; // ~3.13
 ...
 ```
@@ -48,29 +46,33 @@ void sendData() {
   Serial.print(";");
   Serial.print(motor2.getMotorSpeed());
   Serial.print(";");
-  Serial.print(readBatteryVoltage(), 2); // Akun jännite kahden desimaalin tarkkuudella
+  Serial.print(readBatteryVoltage(), 2); // Battery voltage with two decimal places
   Serial.print("\n");
 }
 
 float readBatteryVoltage() {
   int raw = analogRead(voltagePin);            // 0–1023
-  float voltage = (raw / 1023.0) * 5.0;         // Muunnetaan jännitteeksi
-  return voltage * voltageScale;               // Skaalataan varsinaiseksi jännitteeksi.
+  float voltage = (raw / 1023.0) * 5.0;         // Convert to voltage
+  return voltage * voltageScale;               // Scale to actual voltage.
 }
 ```
 
-Tallenna tiedosto ja käännä ja lataa se Arduinon muistiin ajamalla komennot
+Save the file and compile and upload it to the Arduino's memory by running the commands
+
 ```bash
 /opt/nomga/arduino/compile.sh
 /opt/nomga/arduino/upload.sh
 ```
 
-### Jännitteen lukeminen ROS2-ympäristössä
-Arduino syöttää nyt merkkijononsa viimeisenä kenttänä tiedon jännitteestä. SeBotin arkkitehtuurissa tämän lukeminen kannattaa tehdä samassa yhteydessä kuin moottoreiden tietojen lukeminen eli ``motordriver`` nodessa. Tämä tieto voidaan julkaista samalla kertaa muun ``/motor_data`` topicin yhteydessä, jos päivitämme sen käyttämän tietotyypin yhdellä lisäkentällä. (Toinen, lopulta suoraviivaisempi vaihtoehto olisi julkaista akun jännitetieto suoraan omassa nodessaan. Tässä haluamme kuitenkin havainnollistaa topicien uudelleenjulkaisua erillisessä nodessa. Omana harjoituksenasi voit miettiä, miten oikaista tämän välivaiheen ohi.)
+### Reading voltage in ROS2 environment
 
-#### MotordriverMessage päivitys
-Päivitetään ensin tietotyyppi lisäämällä yksi ``float32`` tyyppinen kenttä tiedoston loppuun.
+Arduino now provides voltage information as the last field of its string. In SeBot's architecture, reading this should be done in the same context as reading motor data, i.e., in the `motordriver` node. This information can be published at the same time as other `/motor_data` topic information if we update its data type with one additional field. (Another, ultimately more straightforward option would be to publish the battery voltage information directly in its own node. However, in this exercise, we want to illustrate republishing topics in a separate node. As your own exercise, you can consider how to skip this intermediate step.)
+
+#### MotordriverMessage update
+
+First, update the data type by adding one `float32` type field to the end of the file.
 **~/ros2_ws/src/motordriver_msgs/msg/MotordriverMessage.msg**
+
 ```
 int32 encoder1
 int32 encoder2
@@ -81,16 +83,18 @@ int32 pwm2
 float32 battery
 ```
 
-#### motordrive noden päivitys
-Tämän jälkeen muokataan ``motordriver`` nodea siten, että se huomioi myös tämän lisätyn kentän
+#### Motordriver node update
+
+After this, modify the `motordriver` node so that it also takes this added field into account
 **~/ros2_ws/src/motordriver/motordriver/motordriver.py**
+
 ```python
 ...
   def timer_callback(self):
     # Create a message
     if self.msg != "x\n":
         self.arduino.write(self.msg.encode())
-    
+
 
     if self.timercount == 11:
         if self.msg == "x\n":
@@ -99,7 +103,7 @@ Tämän jälkeen muokataan ``motordriver`` nodea siten, että se huomioi myös t
 
         self.timercount = 0
         if self.arduino.inWaiting()>0:
-          while self.arduino.inWaiting()>0: 
+          while self.arduino.inWaiting()>0:
             answer=self.arduino.readline().decode("utf8").split(";")
           msg = MotordriverMessage()
 
@@ -114,26 +118,31 @@ Tämän jälkeen muokataan ``motordriver`` nodea siten, että se huomioi myös t
             # Publish the message
             self.publisher.publish(msg)
           except Exception as err:
-            self.get_logger().info(f'Virhe')
+            self.get_logger().info(f'Error')
             pass
 
     self.timercount += 1
 ...
 ```
-#### Uusi ``battery``-paketti
-Harjoituksen vuoksi teemme uuden ROS2-paketin, johon luomme kaksi erillistä nodea:
-1) ``battery_republish`` joka poimii akun jännitetiedon ja julkaisee sen omassa topicissaan ``/battery_voltage`` ja
-2) ``battery_alert`` joka lukee kyseistä topicia ja havaitessaan jännitteen laskeneen alle asetetun hälytysrajan julkaisee ``/battery_alert`` topicissa asiasta hälyttävää viestiä. Lisäksi node sytyttää hälytysvalon.
 
-Luodaan uusi paketti ``battery``
+#### New `battery` package
+
+For the purpose of this exercise, we will create a new ROS2 package in which we will create two separate nodes:
+
+1. `battery_republish` which extracts battery voltage information and publishes it to its own topic `/battery_voltage` and
+2. `battery_alert` which reads this topic and, upon detecting that the voltage has dropped below a set alert threshold, publishes an alert message on the `/battery_alert` topic. In addition, the node turns on an alert light.
+
+Create a new package `battery`
+
 ```bash
 cd ~/ros2_ws/src/
 ros2 pkg create --build-type ament_python battery
 cd ~/ros2_ws/src/battery/battery
 ```
 
-Luodaan kyseiseen hakemistoon kaksi tiedostoa:
+Create two files in the said directory:
 **~/ros2_ws/src/battery/battery/battery_republish.py**
+
 ```python
 import rclpy
 from rclpy.node import Node
@@ -149,7 +158,7 @@ from std_msgs.msg import Float32
 class BatteryRedirector(Node):
     def __init__(self):
         super().__init__('battery_redirector')
-        self.declare_parameter('battery_check_interval', 10.0) # Parametri jännitteen luvun aikavälille, sekuntia.
+        self.declare_parameter('battery_check_interval', 10.0) # Parameter for battery reading interval, seconds.
         self.publish_interval = self.get_parameter('battery_check_interval').value
 
         self.sub = self.create_subscription(MotordriverMessage, '/motor_data', self.callback, 10)
@@ -180,6 +189,7 @@ if __name__ == '__main__':
 ```
 
 **~/ros2_ws/src/battery/battery/battery_alert.py**
+
 ```python
 import rclpy
 from rclpy.node import Node
@@ -193,52 +203,52 @@ class BatteryAlert(Node):
     def __init__(self):
         super().__init__('battery_alert_node')
 
-        self.declare_parameter('threshold', 12.0) # Oletusarvo 12.0 V, tämä tulee nopeasti vastaan täydelläkin akulla aloitettaessa.
+        self.declare_parameter('threshold', 12.0) # Default value 12.0 V, this is quickly encountered with a full battery when starting.
         self.threshold = self.get_parameter('threshold').get_parameter_value().double_value
-        self.get_logger().info(f"Akun jännitteen alaraja asetettu arvoon {self.threshold:.2f} V")
-        
+        self.get_logger().info(f"Battery voltage lower limit set to {self.threshold:.2f} V")
+
         self.sub = self.create_subscription(Float32, '/battery_voltage', self.voltage_callback, 10)
         self.sub_alert = self.create_subscription(Bool, '/battery_alert', self.alert_callback, 10)
         self.pub = self.create_publisher(Bool, '/battery_alert', 10)
         self.previous_alert_state = False
 
-        # Julkaistaan yhden kerran oletuksena /battery_alertissa False, jotta siellä näkyy varmasti jotain.
+        # Publish False to /battery_alert once by default, to ensure something is displayed there.
         battery_alert_msg = Bool()
-        battery_alert_msg.data = previous_alert_state
+        battery_alert_msg.data = self.previous_alert_state
         self.pub.publish(battery_alert_msg)
-                
-        # Määritellään GPIO nasta hälytys-LEDille
+
+        # Define GPIO pin for alert LED
         self.LED_PIN = 18
-        # Valitaan GPIO-siru (vakio Raspberry Pille)
+        # Select GPIO chip (standard for Raspberry Pi)
         self.chip = lgpio.gpiochip_open(4)
-        # Asetetaan LED_PIN ulostuloksi
+        # Set LED_PIN as output
         lgpio.gpio_claim_output(self.chip, self.LED_PIN)
-        # Alustetaan LED_PIN alas (nollaksi)
+        # Initialize LED_PIN low (zero)
         lgpio.gpio_write(self.chip, self.LED_PIN, 0)
 
-    # Tämä callback kutsutaan kun /battery_alert topiciin tulee viestejä.
+    # This callback is called when messages arrive on the /battery_alert topic.
     def alert_callback(self, msg):
         if msg.data == True:
-            lgpio.gpio_write(self.chip, self.LED_PIN, 1)  
+            lgpio.gpio_write(self.chip, self.LED_PIN, 1)
         else:
-            lgpio.gpio_write(self.chip, self.LED_PIN, 0)  
+            lgpio.gpio_write(self.chip, self.LED_PIN, 0)
 
     def voltage_callback(self, msg):
         if msg.data < self.threshold:
             alert_state = True
         else:
             alert_state = False
-        
-        if previous_alert_state != alert_state: # Julkaistaan /battery_alert tieto vain jos se on muuttunut edellisestä.
+
+        if self.previous_alert_state != alert_state: # Publish /battery_alert info only if it has changed from previous.
             battery_alert_msg = Bool()
             battery_alert_msg.data = alert_state
             self.pub.publish(battery_alert_msg)
-            previous_alert_state = alert_state
+            self.previous_alert_state = alert_state
 
 def main(args=None):
   rclpy.init(args=args)
   batteryalert_node = BatteryAlert()
-  
+
   try:
     rclpy.spin(batteryalert_node)
   except KeyboardInterrupt:
@@ -256,9 +266,10 @@ if __name__ == '__main__':
 
 ```
 
-Päivitetään vielä ``setup.py`` jotta saamme käynnistettyä nodet ``ros2 run`` komennolla.
+Update `setup.py` so that we can launch the nodes with the `ros2 run` command.
 
 **~/ros2_ws/src/battery/setup.py**
+
 ```python
 from setuptools import find_packages, setup
 
@@ -288,52 +299,61 @@ setup(
     },
 )
 ```
-Yhdistä GPIO 18 nastaan haluamasi LED ja sen etuvastus. Tämä voi olla kätevää yhdistää ``materiaali-4-diffdrive``-osiossa mainitun "kaikki valmista LED:in" kanssa siten, että käytetään samaa maa-nastaa 14, joka on nastojen GPIO18 ja GPIO23 välissä, katso kuva alta.
-![Raspberry Pi 5 GPIO nastojen järjestys](https://pinout-ai.s3.eu-west-2.amazonaws.com/raspberry-pi-5-gpio-pinout-diagram.webp)
 
-#### Battery paketin kääntäminen ja testaus
-Nyt voit kääntää muokatut ja lisätyt paketit ja ottaa sen mukaan ROS2-ympäristöön:
+Connect the LED and its current-limiting resistor to GPIO pin 18. This can be conveniently combined with the "all ready LED" mentioned in the `materiaali-4-diffdrive` section by using the same ground pin 14, which is between GPIO18 and GPIO23, see image below.
+![Raspberry Pi 5 GPIO pin order](https://pinout-ai.s3.eu-west-2.amazonaws.com/raspberry-pi-5-gpio-pinout-diagram.webp)
+
+#### Compiling and testing the Battery package
+
+Now you can compile the modified and added packages and include them in the ROS2 environment:
+
 ```bash
 cd ~/ros2_ws
 colcon build
 source ./install/setup.bash
 ```
 
-Kokeile nodejen toiminta ajamalla erillisissä päätteissä komennot (tässä oletetaan että mikään node ei ole valmiiksi käynnissä):
-**Terminaali 1**
+Test the nodes' functionality by running the commands in separate terminals (here it is assumed that no node is already running):
+**Terminal 1**
+
 ```bash
-ros2 launch diffdrive diffdrive.launch.py # käynnistetään kaikki muut nodet, jotta SeBot on ajovalmis
+ros2 launch diffdrive diffdrive.launch.py # launch all other nodes so that SeBot is ready to drive
 ```
 
-**Terminaali 2**
+**Terminal 2**
+
 ```bash
 ros2 run battery battery_republish
 ```
 
-**Terminaali 3**
+**Terminal 3**
+
 ```bash
 ros2 run battery battery_alert
 ```
 
-**Terminaali 4**
+**Terminal 4**
+
 ```bash
 ros2 topic list
 ros2 topic echo /battery_voltage
 ros2 topic echo /battery_alert
 ```
 
-``/battery_alert`` topiciin pitäisi ilmestyä vähintään yksi "False", vaikka akun jännite olisi heti aluksi alle asetetun kynnysarvon. Kynnysarvo on oletuksena korkea 12 V, jotta sen vaikutuksen näkisi nopeasti vaikka akku olisi aluksi täysikin.
+At least one "False" should appear in the `/battery_alert` topic, even if the battery voltage is initially below the set threshold. The threshold is set high by default to 12 V, so that its effect can be seen quickly even if the battery is full at the beginning.
 
-Mikäli kaikki toimii, topicissa ``/battery_voltage`` näkyy ajantasainen jännite ja GPIO nastaan 18 kytketyn LEDin pitäisi syttyä, kun akun jännite laskee alle kynnysarvon. Tämän pitäisi näkyä myös ``/battery_alert`` topicissa tilan muutoksesta kertovana viestinä.
+If everything works, the `/battery_voltage` topic should show the up-to-date voltage and the LED connected to GPIO pin 18 should light up when the battery voltage drops below the threshold. This should also be visible in the `/battery_alert` topic as a message indicating the change of state.
 
-**Huomaa** että isommissa ROS2-järjestelmissä tämäntapainen toiminto toteutetaan todennäköisemmin ``service``nä siten, että jännitteen laskiessa liian alas kutsutaan esimerkiksi ``set_battery_alert`` serviceä arvolla True, joka sitten hoitaa tarvittavat toimet esimerkiksi LEDin sytyttämisen tai järjestelmän alasajamisen mielessä. Tässä harjoituksessa ei kuitenkaan käsitellä servicejä, joten toiminnallisuus hoidetaan topiceilla.
+**Note** that in larger ROS2 systems, this type of functionality is more likely implemented as a `service` such that when the voltage drops too low, for example, a `set_battery_alert` service is called with a value of True, which then handles the necessary actions, such as turning on an LED or shutting down the system. However, in this exercise, services are not covered, so the functionality is handled with topics.
 
-#### Launch tiedosto
-Muokataan vielä ``diffdrive``-paketin launch-tiedostoa, jotta koko järjestelmä lähtee samalla kerralla käyntiin:
+#### Launch file
 
-> Huomaa, että alla olevassa launch-tiedostossa ei oteta käyttöön ``namespace``-toiminnallisuutta. Jos haluat käyttää montaa SeBotia samassa ROS2-verkossa, ota mallia ``materiaali-2-motordriver`` ja ``materiaali-4-diffdrive`` materiaaleista.
+Finally, modify the `diffdrive` package's launch file so that the entire system starts up at once:
+
+> Note that the launch file below does not enable `namespace` functionality. If you want to use multiple SeBots in the same ROS2 network, refer to the `materiaali-2-motordriver` and `materiaali-4-diffdrive` materials.
 
 **~/ros2_ws/src/diffdrive/launch/diffdrive.launch.py**
+
 ```python
 import os
 from ament_index_python.packages import get_package_share_directory
@@ -354,8 +374,8 @@ def generate_launch_description():
         urdf_file_name)
     with open(urdf, 'r') as infp:
         robot_desc = infp.read()
-    
-    
+
+
     return LaunchDescription([
         DeclareLaunchArgument(
             'use_sim_time',
@@ -384,7 +404,7 @@ def generate_launch_description():
             parameters=[os.path.join(
               colcon_prefix_path,
               'config',
-              'params.yaml')] 
+              'params.yaml')]
           ),
 
         Node(
@@ -406,15 +426,15 @@ def generate_launch_description():
             parameters=[os.path.join(
               colcon_prefix_path,
               'config',
-              'params.yaml')]  
-          ),            
+              'params.yaml')]
+          ),
 
         Node(
             package='diffdrive',
             executable='pi_led',
             name='pi_led_node',
             output='screen',
-          ), 
+          ),
 
         Node(
             package='battery',
@@ -423,7 +443,7 @@ def generate_launch_description():
             parameters=[os.path.join(
               colcon_prefix_path,
               'config',
-              'params.yaml')],       
+              'params.yaml')],
             output='screen',
           ),
 
@@ -436,14 +456,16 @@ def generate_launch_description():
               'config',
               'params.yaml')],
             output='screen',
-          ),            
+          ),
 
     ])
 ```
 
-Lopuksi päivitetään ``params.yaml`` uusilla parametreillä:
+Finally, update `params.yaml` with new parameters:
+
 ```yaml
-...
+
+---
 battery_republish_node:
   ros__parameters:
     threshold: 10.5
@@ -452,12 +474,14 @@ battery_alert_node:
     battery_check_interval: 10.0
 ```
 
-Nyt voit kääntää muokatut ja lisätyt paketit ja ottaa sen mukaan ROS2-ympäristöön:
+Now you can compile the modified and added packages and include them in the ROS2 environment:
+
 ```bash
 cd ~/ros2_ws
 colcon build
 source ./install/setup.bash
 ```
+
 -
 
-Nomga Oy - SeAMK - ROS 2 ja moottorinohjaus: PWM-signaalista robottien liikkeenhallintaan
+Nomga Oy - SeAMK - ROS 2 and motor control: From PWM signal to robot motion control
