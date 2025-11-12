@@ -1,1 +1,0 @@
-body{background:#000}.meter{height:30px;width:400px}.meter>label{color:#000;font-weight:700;left:10px;position:relative;top:33px;z-index:1}.meter>meter{border-radius:0;height:50px;width:100%}.pose{color:#fff;display:inline-block;text-align:center;width:133px}.map{bottom:0;left:0;position:absolute;right:0;top:0;z-index:-1}.map>>canvas{height:100%;width:100%}
