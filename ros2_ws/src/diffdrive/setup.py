@@ -25,10 +25,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'odom_battery = diffdrive.odom_battery:main',
             'odom = diffdrive.odom:main',
             'cmd_vel = diffdrive.cmd_vel:main',       
-            'pi_led = diffdrive.pi_led:main',
         ],
     },
 )
