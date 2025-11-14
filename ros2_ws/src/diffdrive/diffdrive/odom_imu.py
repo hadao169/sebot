@@ -6,6 +6,7 @@ from tf_transformations import quaternion_from_euler
 
 from geometry_msgs.msg import TransformStamped
 from tf2_ros import TransformBroadcaster
+from sensor_msgs.msg import Imu
 
 from motordriver_msgs.msg import MotordriverMessage
 
@@ -35,19 +36,6 @@ class OdomNode(Node):
     self.get_logger().info(f'Wheel distance: {self.wheel_base}')
     self.get_logger().info(f'Sensor revolution: {self.ticks_per_revolution}')
 
-    ## Take a prefix for the frame as a parameter or, if no parameter is provided, take it from the namespace.
-    #self.declare_parameter('frame_prefix', '')
-    #frame_prefix_param = self.get_parameter('frame_prefix').get_parameter_value().string_value
-    #if frame_prefix_param:
-    #    self.frame_prefix = frame_prefix_param + '_'
-    #else:
-    #    ns = self.get_namespace().strip('/')
-    #    self.frame_prefix = f'{ns}_' if ns and ns != '' else ''
-
-    #if self.frame_prefix:
-    #        self.get_logger().info(f'Using frame prefix: "{self.frame_prefix}"') 
-    
-
     self.left_encoder = Encoder(self.wheel_radius, self.ticks_per_revolution)
     self.right_encoder = Encoder(self.wheel_radius, self.ticks_per_revolution)
 
@@ -55,9 +43,12 @@ class OdomNode(Node):
     self.odom_x = 0.0
     self.odom_y = 0.0
 
+    #IMU data
+    self.imu_angular_vel_z = 0.0
+
     self.motor_subscriber = self.create_subscription(
         MotordriverMessage,
-        'motor_data',
+        'moto_data',
         self.update_encoders_callback,
         10
     )
@@ -65,6 +56,13 @@ class OdomNode(Node):
     self.odom_publisher = self.create_publisher(
         Odometry,
         'odom',
+        10
+    )
+
+    self.imu_subscriber = self.create_subscription(
+        Imu,
+        'imu_data',
+        self.imu_callback,
         10
     )
 
@@ -83,6 +81,9 @@ class OdomNode(Node):
     self.left_encoder.update(message.encoder1)
     self.right_encoder.update(-message.encoder2)
     self.update = True
+
+  def imu_callback(self, msg: Imu):
+    self.imu_angular_vel_z = msg.angular_velocity.z
 
   def timer_callback(self):
     if not self.update: return
@@ -104,8 +105,8 @@ class OdomNode(Node):
     # If the wheels move equally in opposite directions (𝑑_left=-𝑑_right -> delta_distance=0), the robot rotates
     # in place.
     delta_distance = (d_left + d_right) / 2.0
-    delta_theta = (d_right - d_left) / self.wheel_base
-
+    delta_theta = self.imu_angular_vel_z
+    
     if delta_distance != 0:
       robot_x = math.cos( delta_theta ) * delta_distance
       robot_y = -math.sin( delta_theta ) * delta_distance

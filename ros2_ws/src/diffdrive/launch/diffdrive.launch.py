@@ -81,6 +81,7 @@ def generate_launch_description():
               'params.yaml')]
 
           ),
+
         
         ## Lisätään muunnos map->[namespace]_odom jotta kaikki robotit saadaan mukaan samaan TF-puuhun. 
         #Node(
