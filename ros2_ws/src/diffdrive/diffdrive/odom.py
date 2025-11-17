@@ -1,14 +1,10 @@
 import rclpy
 from rclpy.node import Node
-
 from nav_msgs.msg import Odometry
 from tf_transformations import quaternion_from_euler
-
 from geometry_msgs.msg import TransformStamped
 from tf2_ros import TransformBroadcaster
-
 from motordriver_msgs.msg import MotordriverMessage
-
 import math
 
 try:
@@ -34,19 +30,6 @@ class OdomNode(Node):
     self.get_logger().info(f'Wheel radius: {self.wheel_radius}')
     self.get_logger().info(f'Wheel distance: {self.wheel_base}')
     self.get_logger().info(f'Sensor revolution: {self.ticks_per_revolution}')
-
-    ## Take a prefix for the frame as a parameter or, if no parameter is provided, take it from the namespace.
-    #self.declare_parameter('frame_prefix', '')
-    #frame_prefix_param = self.get_parameter('frame_prefix').get_parameter_value().string_value
-    #if frame_prefix_param:
-    #    self.frame_prefix = frame_prefix_param + '_'
-    #else:
-    #    ns = self.get_namespace().strip('/')
-    #    self.frame_prefix = f'{ns}_' if ns and ns != '' else ''
-
-    #if self.frame_prefix:
-    #        self.get_logger().info(f'Using frame prefix: "{self.frame_prefix}"') 
-    
 
     self.left_encoder = Encoder(self.wheel_radius, self.ticks_per_revolution)
     self.right_encoder = Encoder(self.wheel_radius, self.ticks_per_revolution)

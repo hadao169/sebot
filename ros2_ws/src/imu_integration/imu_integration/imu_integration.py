@@ -46,7 +46,7 @@ class ImuIntegrationNode(Node):
   def angular_vel_callback(self, msg: Vector3Stamped):
     self.angular_vel = msg.vector
 
-
+  
 def main(args=None):
   rclpy.init(args=args)
 
