@@ -37,6 +37,16 @@
       </material>
     </visual>
   </link>
+  <link name="caster_wheel">
+    <visual>
+      <geometry>
+        <sphere radius="0.05"/>
+        <!-- Pieni pyörä, säde 0.05m --></geometry>
+      <material name="gray">
+        <color rgba="0.5 0.5 0.5 1"/>
+        <!-- Harmaa väri --></material>
+    </visual>
+  </link>
   <joint name="base_to_left_wheel" type="fixed">
     <parent link="base_link"/>
     <child link="left_wheel"/>
@@ -48,5 +58,10 @@
     <child link="right_wheel"/>
     <origin xyz="0 -0.15 0" rpy="-1.57 0 0"/>
     <axis xyz="0 1 0"/>
+  </joint>
+  <joint name="base_to_caster_wheel" type="fixed">
+    <parent link="base_link"/>
+    <child link="caster_wheel"/>
+    <origin xyz="0.2 0 -0.05" rpy="0 0 0"/>
   </joint>
 </robot>

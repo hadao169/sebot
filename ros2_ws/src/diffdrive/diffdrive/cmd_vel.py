@@ -53,8 +53,8 @@ class CmdVelNode(Node):
   def cmd_vel_callback(self, msg):
     # mps_l = vasen rengas m/s
     # mps_r = oikea rengas m/s
-    mps_l = +(msg.linear.x + (msg.angular.z * self.wheel_base / 2.0))
-    mps_r = -(msg.linear.x - (msg.angular.z * self.wheel_base / 2.0))
+    mps_l = -(msg.linear.x - (msg.angular.z * self.wheel_base / 2.0))
+    mps_r = (msg.linear.x + (msg.angular.z * self.wheel_base / 2.0))
 
     string_msg = String()
     string_msg.data = "SPD;%i;%i;"%(self.mps_to_spd(mps_l), self.mps_to_spd(mps_r))

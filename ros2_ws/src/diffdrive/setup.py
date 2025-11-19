@@ -25,7 +25,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'odom = diffdrive.odom:main',
+            # 'odom = diffdrive.odom:main',
             'cmd_vel = diffdrive.cmd_vel:main',
             'odom_imu = diffdrive.odom_imu:main'        
         ],

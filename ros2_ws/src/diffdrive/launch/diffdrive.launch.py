@@ -96,17 +96,17 @@ def generate_launch_description():
               'params.yaml')]
         ),
 
-        Node(
-            package='diffdrive',
-            executable='odom',
-            name='odom_node',
-            #namespace = NAMESPACE,
-            output='screen',
-            parameters=[os.path.join(
-              colcon_prefix_path,
-              'config',
-              'params.yaml')]
-        ),
+        # Node(
+        #     package='diffdrive',
+        #     executable='odom',
+        #     name='odom_node',
+        #     #namespace = NAMESPACE,
+        #     output='screen',
+        #     parameters=[os.path.join(
+        #       colcon_prefix_path,
+        #       'config',
+        #       'params.yaml')]
+        # ),
 
         Node(
             package='diffdrive',

@@ -14,7 +14,7 @@ except ImportError:
     from encoder import Encoder
 
 
-class OdomNode(Node):
+class OdomImuNode(Node):
   def __init__(self):
     super().__init__('odom_node')
 
@@ -42,7 +42,7 @@ class OdomNode(Node):
 
     self.motor_subscriber = self.create_subscription(
         MotordriverMessage,
-        'moto_data',
+        'motor_data',
         self.update_encoders_callback,
         10
     )
@@ -56,7 +56,7 @@ class OdomNode(Node):
 
     self.odom_publisher = self.create_publisher(
         Odometry,
-        'odom', 
+        'odom_imu', 
         10
     )
 
@@ -64,7 +64,7 @@ class OdomNode(Node):
 
     self.prev_time = self.get_clock().now().nanoseconds
 
-    timer_period = 0.02 
+    timer_period = 0.1
     self.timer = self.create_timer(timer_period, self.timer_callback)
     self.update = True
 
@@ -75,11 +75,11 @@ class OdomNode(Node):
 
   def imu_callback(self, msg: Imu):
     self.imu_data = msg
+    self.update = True
 
-  def timer_callback(self):
+  def timer_callback(self):    
     if not self.update: return
     self.update = False
-    
     current_time = self.get_clock().now().nanoseconds
     elapsed = (current_time - self.prev_time) / 1000000000
     self.prev_time = current_time
@@ -88,25 +88,27 @@ class OdomNode(Node):
     d_right = self.right_encoder.deltam()
 
     delta_distance = (d_left + d_right) / 2.0
+    # delta_theta = (d_right - d_left) / self.wheel_base
 
-    q = self.imu_data.orientation
+    #Quaternion from IMU
+    quat = self.imu_data.orientation
     
-    (roll, pitch, imu_yaw) = euler_from_quaternion([q.x, q.y, q.z, q.w])
+    (roll, pitch, imu_yaw) = euler_from_quaternion([quat.x, quat.y, quat.z, quat.w])
 
-    delta_theta = imu_yaw - self.odom_theta 
+    # delta_theta = imu_yaw - self.odom_theta 
     
     self.odom_theta = imu_yaw 
-    
+
+    # https://automaticaddison.com/calculating-wheel-odometry-for-a-differential-drive-robot/ 
     if delta_distance != 0:
-      robot_x = math.cos( self.odom_theta ) * delta_distance
-      robot_y = math.sin( self.odom_theta ) * delta_distance 
-      
-      self.odom_x += robot_x
-      self.odom_y += robot_y
+      delta_x = math.cos( self.odom_theta ) * delta_distance
+      delta_y = math.sin( self.odom_theta ) * delta_distance 
+
+      self.odom_x += delta_x
+      self.odom_y += delta_y
 
     linear_x = delta_distance / elapsed 
     linear_y = 0.0 
-    
     angular_z = self.imu_data.angular_velocity.z
 
     odom_msg = Odometry()
@@ -117,9 +119,15 @@ class OdomNode(Node):
     odom_msg.pose.pose.position.x = self.odom_x 
     odom_msg.pose.pose.position.y = self.odom_y 
     odom_msg.pose.pose.position.z = 0.0
+    
+    #Orientation 
+    q = quaternion_from_euler(0.0, 0.0, self.odom_theta)
+    odom_msg.pose.pose.orientation.x = q[0]
+    odom_msg.pose.pose.orientation.y = q[1]
+    odom_msg.pose.pose.orientation.z = q[2]
+    odom_msg.pose.pose.orientation.w = q[3]
 
-    odom_msg.pose.pose.orientation = self.imu_data.orientation
-
+    #Velocity
     odom_msg.twist.twist.linear.x = linear_x
     odom_msg.twist.twist.linear.y = linear_y
     odom_msg.twist.twist.angular.z = angular_z
@@ -129,21 +137,23 @@ class OdomNode(Node):
     t = TransformStamped()
     t.header.stamp = self.get_clock().now().to_msg()
     t.header.frame_id = 'odom'
-    t.child_frame_id = 'base_footprint'
+    t.child_frame_id = 'base_footprint' #projection to ground of base_link
 
     t.transform.translation.x = self.odom_x 
     t.transform.translation.y = self.odom_y 
     t.transform.translation.z = 0.0
 
-    t.transform.rotation = self.imu_data.orientation 
-
+    t.transform.rotation.x = q[0]
+    t.transform.rotation.y = q[1]
+    t.transform.rotation.z = q[2]
+    t.transform.rotation.w = q[3]
     self.tf_broadcaster.sendTransform(t) 
 
 
 def main(args=None):
   rclpy.init(args=args)
 
-  odom_node = OdomNode()
+  odom_node = OdomImuNode()
 
   try:
     rclpy.spin(odom_node)
