@@ -1,14 +1,10 @@
 import rclpy
 from rclpy.node import Node
-
 from nav_msgs.msg import Odometry
 from tf_transformations import quaternion_from_euler
-
 from geometry_msgs.msg import TransformStamped
 from tf2_ros import TransformBroadcaster
-
 from motordriver_msgs.msg import MotordriverMessage
-
 import math
 
 try:
@@ -34,19 +30,6 @@ class OdomNode(Node):
     self.get_logger().info(f'Wheel radius: {self.wheel_radius}')
     self.get_logger().info(f'Wheel distance: {self.wheel_base}')
     self.get_logger().info(f'Sensor revolution: {self.ticks_per_revolution}')
-
-    ## Take a prefix for the frame as a parameter or, if no parameter is provided, take it from the namespace.
-    #self.declare_parameter('frame_prefix', '')
-    #frame_prefix_param = self.get_parameter('frame_prefix').get_parameter_value().string_value
-    #if frame_prefix_param:
-    #    self.frame_prefix = frame_prefix_param + '_'
-    #else:
-    #    ns = self.get_namespace().strip('/')
-    #    self.frame_prefix = f'{ns}_' if ns and ns != '' else ''
-
-    #if self.frame_prefix:
-    #        self.get_logger().info(f'Using frame prefix: "{self.frame_prefix}"') 
-    
 
     self.left_encoder = Encoder(self.wheel_radius, self.ticks_per_revolution)
     self.right_encoder = Encoder(self.wheel_radius, self.ticks_per_revolution)
@@ -82,6 +65,7 @@ class OdomNode(Node):
     # Store the information in the message so it can be processed in timer_callback
     self.left_encoder.update(message.encoder1)
     self.right_encoder.update(-message.encoder2)
+    self.get_logger().info(f'Encoders updated: L={message.encoder1}, R={message.encoder2}')
     self.update = True
 
   def timer_callback(self):
@@ -109,14 +93,14 @@ class OdomNode(Node):
     if delta_distance != 0:
       robot_x = math.cos( delta_theta ) * delta_distance
       robot_y = -math.sin( delta_theta ) * delta_distance
-      self.odom_x = self.odom_x + ( math.cos( self.odom_theta ) * robot_x - math.sin( self.odom_theta ) * robot_y )
-      self.odom_y = self.odom_y + ( math.sin( self.odom_theta ) * robot_x + math.cos( self.odom_theta ) * robot_y )
+      self.odom_x += ( math.cos( self.odom_theta ) * robot_x - math.sin( self.odom_theta ) * robot_y )
+      self.odom_y += ( math.sin( self.odom_theta ) * robot_x + math.cos( self.odom_theta ) * robot_y )
 
     linear_y = delta_distance * math.cos(self.odom_theta) / elapsed
     linear_x = delta_distance * math.sin(self.odom_theta) / elapsed
     angular_z = delta_theta / elapsed
 
-    self.odom_theta = delta_theta + self.odom_theta
+    self.odom_theta += delta_theta
 
     odom_msg = Odometry()
     odom_msg.header.stamp = self.get_clock().now().to_msg()
@@ -169,7 +153,7 @@ class OdomNode(Node):
 
     # Publish the transformation
     self.tf_broadcaster.sendTransform(t) ##
-
+      
 
 def main(args=None):
   rclpy.init(args=args)
