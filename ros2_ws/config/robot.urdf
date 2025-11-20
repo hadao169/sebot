@@ -47,6 +47,23 @@
         <!-- Harmaa väri --></material>
     </visual>
   </link>
+
+  <link name="imu_link1">
+    <visual>
+      <geometry>
+        <box size="0.1 0.1 0.05"/>
+        <!-- IMU:n koko --></geometry>
+      <material name="red">
+        <color rgba="1 0 0 1"/>
+        <!-- Punainen väri --></material>
+    </visual>
+  </link>
+
+  <joint name="base_to_imu_link1" type="fixed">
+    <parent link="base_link"/>
+    <child link="imu_link1"/>
+    <origin xyz="0 0 0.1" rpy="0 0 0"/>
+  </joint>
   <joint name="base_to_left_wheel" type="fixed">
     <parent link="base_link"/>
     <child link="left_wheel"/>
@@ -64,4 +81,4 @@
     <child link="caster_wheel"/>
     <origin xyz="0.2 0 -0.05" rpy="0 0 0"/>
   </joint>
-</robot>
+  </robot>
