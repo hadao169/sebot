@@ -4,6 +4,8 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.actions import IncludeLaunchDescription
 
 def generate_launch_description():
     # NAMESPACE = 'SeBotxx' # korvaa xx oman Sebotin tunnisteella, esimerkiksi IP-osoitteen viimeisellä tavulla.
@@ -20,7 +22,18 @@ def generate_launch_description():
         urdf_file_name)
     with open(urdf, 'r') as infp:
         robot_desc = infp.read()
+    print("Robot description read from file:", urdf)
 
+
+    xsens_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory('xsens_mti_ros2_driver'),
+                'launch',
+                'xsens_mti_node.launch.py'
+            )
+        )
+    )
 
     return LaunchDescription([
         DeclareLaunchArgument(
@@ -37,15 +50,39 @@ def generate_launch_description():
             #parameters=[{'use_sim_time': use_sim_time, 'robot_description': robot_desc, 'frame_prefix': FRAME_PREFIX}],
             parameters=[{'use_sim_time': use_sim_time, 'robot_description': robot_desc}],
             #arguments=[urdf] # 26.5.2025 tämä on tarpeeton rivi, sillä robot_state_publisher ei parsi komentokehotteen argumentteja.
-            ),
+        ),
 
-#        Node(
+        Node(
+            package='joint_state_publisher_gui',
+            executable='joint_state_publisher_gui',
+            name='joint_state_publisher_gui',
+            output='screen',
+            #namespace = NAMESPACE,
+            parameters=[{'use_sim_time': use_sim_time}],
+        ),
+
+        Node(
+            package='rviz2',
+            executable='rviz2',
+            name='rviz2',
+            output='screen',
+            arguments=[
+                '-d',
+                os.path.join(
+                    get_package_share_directory('diffdrive'),
+                    'rviz',   # bạn có thể đổi tên nếu khác
+                )
+            ],
+            parameters=[{'use_sim_time': use_sim_time}],
+        ),
+
+#       Node(
 #            package='tf2_web_republisher_py',
 #            executable='tf2_web_republisher',
 #            name='tf2_web_republisher',
 #            #namespace = NAMESPACE,
 #            output='screen',
-#          ),
+#       ),
 
         Node(
             package='motordriver',
@@ -57,18 +94,32 @@ def generate_launch_description():
               colcon_prefix_path,
               'config',
               'params.yaml')]
-          ),
+        ),
+
+        # Node(
+        #     package='diffdrive',
+        #     executable='odom',
+        #     name='odom_node',
+        #     #namespace = NAMESPACE,
+        #     output='screen',
+        #     parameters=[os.path.join(
+        #       colcon_prefix_path,
+        #       'config',
+        #       'params.yaml')]
+        # ),
+
         Node(
             package='diffdrive',
-            executable='odom',
-            name='odom_node',
+            executable='odom_imu',
+            name='odom_imu_node',
             #namespace = NAMESPACE,
             output='screen',
             parameters=[os.path.join(
               colcon_prefix_path,
               'config',
               'params.yaml')]
-          ),
+        ),
+        
         Node(
             package='diffdrive',
             executable='cmd_vel',
@@ -79,17 +130,6 @@ def generate_launch_description():
               colcon_prefix_path,
               'config',
               'params.yaml')]
-
-          ),
-        
-        ## Lisätään muunnos map->[namespace]_odom jotta kaikki robotit saadaan mukaan samaan TF-puuhun. 
-        #Node(
-        #    package='tf2_ros',
-        #    executable='static_transform_publisher',
-        #    name='map_to_robot_odom',
-        #    namespace=NAMESPACE,
-        #    arguments=['0', '0', '0', '0', '0', '0',  # x y z yaw pitch roll
-        #               'map', f'{FRAME_PREFIX}odom'],
-        #    output='screen'
-        #),
+        ),
+        xsens_launch,
     ])
