@@ -1,0 +1,338 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+	MSVC 2012 Debugger visualizers for XsTypes objects
+	
+	Copy to %USERPROFILE%\My Documents\Visual Studio 2012\Visualizers
+	or to %VSINSTALLDIR%\Common7\Packages\Debugger\Visualizers (requires admin access)
+	
+	See also http://msdn.microsoft.com/en-us/library/vstudio/jj620914.aspx
+	
+	When errors occur, use this registry value [HKEY_CURRENT_USER\Software\Microsoft\VisualStudio\11.0_Config\Debugger] "EnableNatvisDiagnostics"=dword:00000001 
+-->
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+	<Type Name="XsVector">
+		<AlternativeType Name="xsens::Vector"/>
+		<!-- display contents of small vectors without expanding -->
+		<DisplayString Condition="m_size==0 || (m_flags &amp; 4) != 0">&lt;empty&gt;</DisplayString>
+		<DisplayString Condition="m_size==3">3: {{{m_data[0]}, {m_data[1]}, {m_data[2]}}}</DisplayString>
+		<DisplayString Condition="m_size==2">2: {{{m_data[0]}, {m_data[1]}}}</DisplayString>
+		<DisplayString Condition="m_size==1">1: {{{m_data[0]}}}</DisplayString>
+		<!-- too much data, put it under 'expand' -->
+		<DisplayString>{m_size}: {{{m_data[0]}, {m_data[1]}, {m_data[2]}, ...}}</DisplayString>
+		<Expand>
+			<ArrayItems>
+				<Size>m_size</Size>
+				<ValuePointer>m_data</ValuePointer>
+			</ArrayItems>
+			<Item Name="m_flags">XsDataFlags(m_flags)</Item>
+		</Expand>
+	</Type>
+	<Type Name="XsMatrix">
+		<AlternativeType Name="xsens::Matrix"/>
+		<DisplayString Condition="m_cols==0 || m_rows==0 || (m_flags &amp; 4)!=0">&lt;empty&gt;</DisplayString>
+		<DisplayString Condition="m_cols==m_stride">({m_rows},{m_cols})</DisplayString>
+		<DisplayString>({m_rows},{m_cols},stride={m_stride})</DisplayString>
+		<Expand>
+			<IndexListItems Condition="m_data != 0 &amp;&amp; m_cols!=m_stride">
+				<!-- 1D list view, skipping columns according to stride -->
+				<Size>m_rows*m_cols</Size>
+				<ValueNode>m_data[($i/m_cols)*m_stride + $i%m_cols]</ValueNode>
+			</IndexListItems>
+			<ArrayItems Condition="m_data != 0 &amp;&amp; m_cols==m_stride">
+				<!-- 2D array view: this works because m_rows and m_cols are contigious -->
+				<Rank>2</Rank>
+				<Size>(int)(((XsSize*)&amp;m_rows)[$i])</Size>
+				<ValuePointer>m_data</ValuePointer>
+			</ArrayItems>
+			<Item Name="m_flags">XsDataFlags(m_flags)</Item>
+		</Expand>
+	</Type>
+	<Type Name="XsQuaternion">
+		<AlternativeType Name="xsens::Quaternion"/>
+		<DisplayString>({m_data[0]}, {m_data[1]}, {m_data[2]}, {m_data[3]})</DisplayString>
+		<!-- Explicitly list the fields we want. This saves one level of expansion if we happen to be a derived type -->
+		<Expand>
+			<Item Name="m_w">m_w</Item>
+			<Item Name="m_x">m_x</Item>
+			<Item Name="m_y">m_y</Item>
+			<Item Name="m_z">m_z</Item>
+		</Expand>
+	</Type>
+	<Type Name="XsDeviceId">
+		<DisplayString Condition="(m_deviceId &amp; 0x80000000)==0">{m_deviceId,X}</DisplayString>
+		<DisplayString Condition="(m_deviceId &amp; 0x80000000)!=0 &amp;&amp; m_subDevice==0">{m_productCode,sb} {m_deviceId,X}</DisplayString>
+		<DisplayString Condition="(m_deviceId &amp; 0x80000000)!=0 &amp;&amp; m_subDevice!=0">{m_productCode,sb} {m_deviceId,X}/{m_subDevice}</DisplayString>
+	</Type>
+	<Type Name="XsArrayImpl&lt;*,*,*&gt;">
+		<!-- display contents of small arrays without expanding -->
+		<DisplayString Condition="m_size==3">3: {{{(($T1 *)m_data)[0]}, {(($T1 *)m_data)[1]}, {(($T1 *)m_data)[2]}}}</DisplayString>
+		<DisplayString Condition="m_size==2">2: {{{(($T1 *)m_data)[0]}, {(($T1 *)m_data)[1]}}}</DisplayString>
+		<DisplayString Condition="m_size==1">1: {{{(($T1 *)m_data)[0]}}}</DisplayString>
+		<DisplayString Condition="m_size==0">&lt;empty&gt;</DisplayString>
+		<!-- too much data, put it under 'expand' -->
+		<DisplayString>{m_size}: {{{(($T1 *)m_data)[0]}, {(($T1 *)m_data)[1]}, {(($T1 *)m_data)[2]}, ...}}</DisplayString>
+		<Expand>
+			<Item Name="m_descriptor">m_descriptor</Item>
+			<Item Name="m_size">m_size</Item>
+			<Item Name="m_reserved">m_reserved</Item>
+			<Item Name="m_flags">XsDataFlags(m_flags)</Item>
+			<ArrayItems>
+				<Size>m_size</Size>
+				<ValuePointer>(($T1 *)m_data)</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+	<Type Name="XsArrayImpl&lt;*,*,*&gt;::IteratorImplBase&lt;*,*,*&gt;">
+		<!-- display contents of iterators nicely -->
+		<DisplayString>{*m_ptr}</DisplayString>
+		<Expand>
+			<Item Name="[data]">m_ptr,na</Item>
+		</Expand>
+	</Type>
+	<Type Name="XsString">
+		<DisplayString Condition="m_size==0">""</DisplayString>
+		<DisplayString>"{(char*)m_data, sb}"</DisplayString>
+		<StringView>m_data, sb</StringView>
+	</Type>
+	<Type Name="XsWString">
+		<DisplayString Condition="m_size==0">""</DisplayString>
+		<DisplayString>"{(wchar_t*) m_data,su}"</DisplayString>
+		<StringView>m_data,sub</StringView>
+	</Type>
+	<Type Name="XsOutputConfiguration">
+		<DisplayString>{(XsDataIdentifier) m_dataIdentifier} @ {m_frequency, d} Hz</DisplayString>
+		<Expand>
+			<Item Name="m_dataIdentifier">m_dataIdentifier,X</Item>
+			<Item Name="m_frequency">m_frequency</Item>
+		</Expand>
+	</Type>
+	<Type Name="XsMessage">
+		<DisplayString Condition="m_message.m_size == 0">Empty message</DisplayString>
+		<DisplayString Condition="((unsigned char*)m_message.m_data)[3] == 255">{(XsXbusMessageId)(((unsigned char*)m_message.m_data)[2]),en} ({(short)(((uint8_t*)m_message.m_data)[2]),Xb}) SZ {256* (unsigned int) ((unsigned char*)m_message.m_data)[4] + ((unsigned char*)m_message.m_data)[5],d} BID {(short)(((unsigned char*)m_message.m_data)[1]),Xb}</DisplayString>
+		<DisplayString>{(XsXbusMessageId)(((unsigned char*)m_message.m_data)[2]),en} ({(short)(((uint8_t*)m_message.m_data)[2]),Xb}) SZ {(short)(((unsigned char*)m_message.m_data)[3]),d} BID {(short)(((unsigned char*)m_message.m_data)[1]),Xb}</DisplayString>
+		<Expand>
+			<Item Name="prefix">(short)(((unsigned char*)m_message.m_data)[0]),X</Item>
+			<Item Name="busID">(short)(((unsigned char*)m_message.m_data)[1]),X</Item>
+			<Item Name="msgID">(XsXbusMessageId)(((unsigned char*)m_message.m_data)[2]),X</Item>
+			<Item Name="extsize" Condition="((unsigned char*)m_message.m_data)[3] == 255">256* (short) ((unsigned char*)m_message.m_data)[4] + ((unsigned char*)m_message.m_data)[5]</Item>
+			<Item Name="size" Condition="((unsigned char*)m_message.m_data)[3] &lt; 255">(short)(((unsigned char*)m_message.m_data)[3])</Item>
+			<ArrayItems Condition="((unsigned char*)m_message.m_data)[3] &gt; 0 &amp;&amp; ((unsigned char*)m_message.m_data)[3] &lt; 255">
+				<Size>(short) (((unsigned char*)m_message.m_data)[3])</Size>
+				<ValuePointer>((unsigned char*)m_message.m_data)+4,Xb</ValuePointer>
+			</ArrayItems>
+			<ArrayItems Condition="((unsigned char*)m_message.m_data)[3] == 255">
+				<Size>(short) (256* (short) ((unsigned char*)m_message.m_data)[4] + ((unsigned char*)m_message.m_data)[5])</Size>
+				<ValuePointer>((unsigned char*)m_message.m_data)+6,Xb</ValuePointer>
+			</ArrayItems>
+			<Item Name="checksum" Condition="((unsigned char*)m_message.m_data)[3] &gt; 0 &amp;&amp; ((unsigned char*)m_message.m_data)[3] &lt; 255">(short)(((unsigned char*)m_message.m_data)[((unsigned char*)m_message.m_data)[3]+4]),X</Item>
+			<Item Name="checksum" Condition="((unsigned char*)m_message.m_data)[3] == 255">(short)(((unsigned char*)m_message.m_data)[256* (short) ((unsigned char*)m_message.m_data)[4] + ((unsigned char*)m_message.m_data)[5]+6]),X</Item>
+			<Item Name="m_autoUpdateChecksum">m_autoUpdateChecksum</Item>
+		</Expand>
+	</Type>
+	<Type Name="XsAnalogInData">
+		<DisplayString>{m_data,X}</DisplayString>
+	</Type>
+	<Type Name="XsException">
+		<DisplayString>{m_code}: {m_description}</DisplayString>
+	</Type>
+	<Type Name="XsSimpleVersion">
+		<DisplayString>{(unsigned int) m_major}.{(unsigned int) m_minor}.{(unsigned int) m_revision}</DisplayString>
+	</Type>
+	<Type Name="XsVersion">
+		<DisplayString>{m_major}.{m_minor}.{m_revision} build {m_build} {m_extra}</DisplayString>
+	</Type>
+	<Type Name="XsTimeStamp">
+		<DisplayString>{m_msTime} ({((m_msTime/(1000*60*60))%24)/10}{((m_msTime/(1000*60*60))%24)%10}:{((m_msTime/(1000*60))%60)/10}{((m_msTime/(1000*60))%60)%10}:{((m_msTime/1000)%60)/10}{((m_msTime/1000)%60)%10}.{((m_msTime/100)%10)}{((m_msTime/10)%10)}{(m_msTime%10)})</DisplayString>
+	</Type>
+	<Type Name="XsUShortVector">
+		<DisplayString>{{{m_data[0],X}, {m_data[1],X}, {m_data[2],X}}}</DisplayString>
+	</Type>
+	<Type Name="XsUtcTime">
+		<DisplayString Condition="m_valid==1">{m_year}/{m_month}/{m_day} {m_hour}:{m_minute}:{m_second} +{m_nano}ns</DisplayString>
+		<DisplayString Condition="m_valid==2">{m_hour}:{m_minute}:{m_second} +{m_nano}ns</DisplayString>
+		<DisplayString>&lt;invalid&gt;</DisplayString>
+	</Type>
+	<Type Name="XsByteArray">
+		<DisplayString Condition="m_size==0">&lt;empty&gt;</DisplayString>
+		<DisplayString>{m_size}: {m_data, sb}</DisplayString>
+		<StringView>m_data, sb</StringView>
+		<Expand>
+			<Item Name="m_size">m_size</Item>
+			<Item Name="m_reserved">m_reserved</Item>
+			<Item Name="m_descriptor">m_descriptor</Item>
+			<Item Name="m_flags">XsDataFlags(m_flags)</Item>
+			<ArrayItems>
+				<Size>m_size</Size>
+				<ValuePointer>((unsigned char *)m_data),X</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+	<Type Name="XsDeviceIdArray">
+		<!-- display contents of small arrays without expanding -->
+		<DisplayString Condition="m_size==3">3: {{{((XsDeviceId *)m_data)[0]}, {((XsDeviceId *)m_data)[1]}, {((XsDeviceId *)m_data)[2]}}}</DisplayString>
+		<DisplayString Condition="m_size==2">2: {{{((XsDeviceId *)m_data)[0]}, {((XsDeviceId *)m_data)[1]}}}</DisplayString>
+		<DisplayString Condition="m_size==1">1: {{{((XsDeviceId *)m_data)[0]}}}</DisplayString>
+		<DisplayString Condition="m_size==0">&lt;empty&gt;</DisplayString>
+		<!-- too much data, put it under 'expand' -->
+		<DisplayString>{m_size}: {{{((XsDeviceId *)m_data)[0]}, {((XsDeviceId *)m_data)[1]}, {((XsDeviceId *)m_data)[2]}, ...}}</DisplayString>
+		<Expand>
+			<Item Name="m_descriptor">m_descriptor</Item>
+			<Item Name="m_size">m_size</Item>
+			<Item Name="m_reserved">m_reserved</Item>
+			<Item Name="m_flags">XsDataFlags(m_flags)</Item>
+			<ArrayItems>
+				<Size>m_size</Size>
+				<ValuePointer>((XsDeviceId *)m_data)</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+	<Type Name="XsInt64Array">
+		<!-- display contents of small arrays without expanding -->
+		<DisplayString Condition="m_size==3">3: {{{((int64_t *)m_data)[0]}, {((int64_t *)m_data)[1]}, {((int64_t *)m_data)[2]}}}</DisplayString>
+		<DisplayString Condition="m_size==2">2: {{{((int64_t *)m_data)[0]}, {((int64_t *)m_data)[1]}}}</DisplayString>
+		<DisplayString Condition="m_size==1">1: {{{((int64_t *)m_data)[0]}}}</DisplayString>
+		<DisplayString Condition="m_size==0">&lt;empty&gt;</DisplayString>
+		<!-- too much data, put it under 'expand' -->
+		<DisplayString>{m_size}: {{{((int64_t *)m_data)[0]}, {((int64_t *)m_data)[1]}, {((int64_t *)m_data)[2]}, ...}}</DisplayString>
+		<Expand>
+			<Item Name="m_descriptor">m_descriptor</Item>
+			<Item Name="m_size">m_size</Item>
+			<Item Name="m_reserved">m_reserved</Item>
+			<Item Name="m_flags">XsDataFlags(m_flags)</Item>
+			<ArrayItems>
+				<Size>m_size</Size>
+				<ValuePointer>((int64_t *)m_data)</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+	<Type Name="XsIntArray">
+		<!-- display contents of small arrays without expanding -->
+		<DisplayString Condition="m_size==3">3: {{{((int *)m_data)[0]}, {((int *)m_data)[1]}, {((int *)m_data)[2]}}}</DisplayString>
+		<DisplayString Condition="m_size==2">2: {{{((int *)m_data)[0]}, {((int *)m_data)[1]}}}</DisplayString>
+		<DisplayString Condition="m_size==1">1: {{{((int *)m_data)[0]}}}</DisplayString>
+		<DisplayString Condition="m_size==0">&lt;empty&gt;</DisplayString>
+		<!-- too much data, put it under 'expand' -->
+		<DisplayString>{m_size}: {{{((int *)m_data)[0]}, {((int *)m_data)[1]}, {((int *)m_data)[2]}, ...}}</DisplayString>
+		<Expand>
+			<Item Name="m_descriptor">m_descriptor</Item>
+			<Item Name="m_size">m_size</Item>
+			<Item Name="m_reserved">m_reserved</Item>
+			<Item Name="m_flags">XsDataFlags(m_flags)</Item>
+			<ArrayItems>
+				<Size>m_size</Size>
+				<ValuePointer>((int *)m_data)</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+	<Type Name="XsMessageArray">
+		<!-- display contents of small arrays without expanding -->
+		<DisplayString Condition="m_size==3">3: {{{((XsMessage *)m_data)[0]}, {((XsMessage *)m_data)[1]}, {((XsMessage *)m_data)[2]}}}</DisplayString>
+		<DisplayString Condition="m_size==2">2: {{{((XsMessage *)m_data)[0]}, {((XsMessage *)m_data)[1]}}}</DisplayString>
+		<DisplayString Condition="m_size==1">1: {{{((XsMessage *)m_data)[0]}}}</DisplayString>
+		<DisplayString Condition="m_size==0">&lt;empty&gt;</DisplayString>
+		<!-- too much data, put it under 'expand' -->
+		<DisplayString>{m_size}: {{{((XsMessage *)m_data)[0]}, {((XsMessage *)m_data)[1]}, {((XsMessage *)m_data)[2]}, ...}}</DisplayString>
+		<Expand>
+			<Item Name="m_descriptor">m_descriptor</Item>
+			<Item Name="m_size">m_size</Item>
+			<Item Name="m_reserved">m_reserved</Item>
+			<Item Name="m_flags">XsDataFlags(m_flags)</Item>
+			<ArrayItems>
+				<Size>m_size</Size>
+				<ValuePointer>((XsMessage *)m_data)</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+	<Type Name="XsOutputConfigurationArray">
+		<!-- display contents of small arrays without expanding -->
+		<DisplayString Condition="m_size==3">3: {{{((XsOutputConfiguration *)m_data)[0]}, {((XsOutputConfiguration *)m_data)[1]}, {((XsOutputConfiguration *)m_data)[2]}}}</DisplayString>
+		<DisplayString Condition="m_size==2">2: {{{((XsOutputConfiguration *)m_data)[0]}, {((XsOutputConfiguration *)m_data)[1]}}}</DisplayString>
+		<DisplayString Condition="m_size==1">1: {{{((XsOutputConfiguration *)m_data)[0]}}}</DisplayString>
+		<DisplayString Condition="m_size==0">&lt;empty&gt;</DisplayString>
+		<!-- too much data, put it under 'expand' -->
+		<DisplayString>{m_size}: {{{((XsOutputConfiguration *)m_data)[0]}, {((XsOutputConfiguration *)m_data)[1]}, {((XsOutputConfiguration *)m_data)[2]}, ...}}</DisplayString>
+		<Expand>
+			<Item Name="m_descriptor">m_descriptor</Item>
+			<Item Name="m_size">m_size</Item>
+			<Item Name="m_reserved">m_reserved</Item>
+			<Item Name="m_flags">XsDataFlags(m_flags)</Item>
+			<ArrayItems>
+				<Size>m_size</Size>
+				<ValuePointer>((XsOutputConfiguration *)m_data)</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+	<Type Name="XsPortInfoArray">
+		<!-- display contents of small arrays without expanding -->
+		<DisplayString Condition="m_size==3">3: {{{((XsPortInfo *)m_data)[0]}, {((XsPortInfo *)m_data)[1]}, {((XsPortInfo *)m_data)[2]}}}</DisplayString>
+		<DisplayString Condition="m_size==2">2: {{{((XsPortInfo *)m_data)[0]}, {((XsPortInfo *)m_data)[1]}}}</DisplayString>
+		<DisplayString Condition="m_size==1">1: {{{((XsPortInfo *)m_data)[0]}}}</DisplayString>
+		<DisplayString Condition="m_size==0">&lt;empty&gt;</DisplayString>
+		<!-- too much data, put it under 'expand' -->
+		<DisplayString>{m_size}: {{{((XsPortInfo *)m_data)[0]}, {((XsPortInfo *)m_data)[1]}, {((XsPortInfo *)m_data)[2]}, ...}}</DisplayString>
+		<Expand>
+			<Item Name="m_descriptor">m_descriptor</Item>
+			<Item Name="m_size">m_size</Item>
+			<Item Name="m_reserved">m_reserved</Item>
+			<Item Name="m_flags">XsDataFlags(m_flags)</Item>
+			<ArrayItems>
+				<Size>m_size</Size>
+				<ValuePointer>((XsPortInfo *)m_data)</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+	<Type Name="XsStringArray">
+		<!-- display contents of small arrays without expanding -->
+		<DisplayString Condition="m_size==3">3: {{{((XsString *)m_data)[0]}, {((XsString *)m_data)[1]}, {((XsString *)m_data)[2]}}}</DisplayString>
+		<DisplayString Condition="m_size==2">2: {{{((XsString *)m_data)[0]}, {((XsString *)m_data)[1]}}}</DisplayString>
+		<DisplayString Condition="m_size==1">1: {{{((XsString *)m_data)[0]}}}</DisplayString>
+		<DisplayString Condition="m_size==0">&lt;empty&gt;</DisplayString>
+		<!-- too much data, put it under 'expand' -->
+		<DisplayString>{m_size}: {{{((XsString *)m_data)[0]}, {((XsString *)m_data)[1]}, {((XsString *)m_data)[2]}, ...}}</DisplayString>
+		<Expand>
+			<Item Name="m_descriptor">m_descriptor</Item>
+			<Item Name="m_size">m_size</Item>
+			<Item Name="m_reserved">m_reserved</Item>
+			<Item Name="m_flags">XsDataFlags(m_flags)</Item>
+			<ArrayItems>
+				<Size>m_size</Size>
+				<ValuePointer>((XsString *)m_data)</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+	<Type Name="XsSyncSettingArray">
+		<!-- display contents of small arrays without expanding -->
+		<DisplayString Condition="m_size==3">3: {{{((XsSyncSetting *)m_data)[0]}, {((XsSyncSetting *)m_data)[1]}, {((XsSyncSetting *)m_data)[2]}}}</DisplayString>
+		<DisplayString Condition="m_size==2">2: {{{((XsSyncSetting *)m_data)[0]}, {((XsSyncSetting *)m_data)[1]}}}</DisplayString>
+		<DisplayString Condition="m_size==1">1: {{{((XsSyncSetting *)m_data)[0]}}}</DisplayString>
+		<DisplayString Condition="m_size==0">&lt;empty&gt;</DisplayString>
+		<!-- too much data, put it under 'expand' -->
+		<DisplayString>{m_size}: {{{((XsSyncSetting *)m_data)[0]}, {((XsSyncSetting *)m_data)[1]}, {((XsSyncSetting *)m_data)[2]}, ...}}</DisplayString>
+		<Expand>
+			<Item Name="m_descriptor">m_descriptor</Item>
+			<Item Name="m_size">m_size</Item>
+			<Item Name="m_reserved">m_reserved</Item>
+			<Item Name="m_flags">XsDataFlags(m_flags)</Item>
+			<ArrayItems>
+				<Size>m_size</Size>
+				<ValuePointer>((XsSyncSetting *)m_data)</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+	<Type Name="XsDataPacket">
+		<DisplayString>DID={m_deviceId} PID={m_packetId} size={d-&gt;_Mypair._Myval2._Myval2._Mysize}</DisplayString>
+		<Expand>
+			<TreeItems>
+				<Size>d-&gt;_Mypair._Myval2._Myval2._Mysize</Size>
+				<HeadPointer>d-&gt;_Mypair._Myval2._Myval2._Myhead-&gt;_Parent</HeadPointer>
+				<LeftPointer>_Left</LeftPointer>
+				<RightPointer>_Right</RightPointer>
+				<ValueNode Condition="_Isnil == 0">_Myval</ValueNode>
+			</TreeItems>
+			<Item Name="DeviceId">m_deviceId</Item>
+			<Item Name="PacketId">m_packetId</Item>
+			<Item Name="TimeOfArrrival">m_toa</Item>
+			<Item Name="TimeOfSampling">m_etos</Item>
+		</Expand>
+	</Type>
+</AutoVisualizer>

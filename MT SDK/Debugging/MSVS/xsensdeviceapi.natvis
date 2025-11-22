@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+	MSVC 2012 Debugger visualizers for XsTypes objects
+	
+	Copy to %USERPROFILE%\My Documents\Visual Studio 2012\Visualizers
+	or to %VSINSTALLDIR%\Common7\Packages\Debugger\Visualizers (requires admin access)
+	
+	See also http://msdn.microsoft.com/en-us/library/vstudio/jj620914.aspx
+	
+	When errors occur, use this registry value [HKEY_CURRENT_USER\Software\Microsoft\VisualStudio\11.0_Config\Debugger] "EnableNatvisDiagnostics"=dword:00000001 
+-->
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+	<Type Name="XsMasterDeviceConfiguration">
+		<DisplayString>{m_masterDeviceId,x}</DisplayString>
+	</Type>
+	<Type Name="XsMtDeviceConfiguration">
+		<DisplayString>{m_deviceId,x}</DisplayString>
+	</Type>
+	<Type Name="XsDeviceConfiguration">
+		<DisplayString>{m_masterInfo.m_masterDeviceId,x} ({m_numberOfDevices} children)</DisplayString>
+		<Expand>
+			<Item Name="m_masterInfo">m_masterInfo</Item>
+			<ArrayItems Condition="m_numberOfDevices!=0">
+				<Size>(int) m_numberOfDevices</Size>
+				<ValuePointer>m_deviceInfo</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+	<Type Name="XsDeviceMode">
+		<AlternativeType Name="XsDeviceModePS"></AlternativeType>
+		<DisplayString Condition="m_period==0">{m_outputMode}/{m_outputSettings} @ &lt;invalid&gt;Hz</DisplayString>
+		<DisplayString>{m_outputMode}/{m_outputSettings} @ {115200.0/((double)m_period * (1+m_skip))}Hz</DisplayString>
+	</Type>
+	<Type Name="XsDeviceModeR">
+		<DisplayString>{m_outputMode}/{m_outputSettings} @ {m_updateRate}Hz</DisplayString>
+	</Type>
+	<Type Name="XsFilterProfile">
+		<DisplayString>[{m_filterType}] {m_label,sb}</DisplayString>
+	</Type>
+	<Type Name="XsSelfTestResult">
+		<DisplayString>{XsSelfTestFlag(m_flags)}</DisplayString>
+	</Type>
+	<Type Name="XsDevicePtrArray">
+		<!-- display contents of small arrays without expanding -->
+		<DisplayString Condition="m_size==3">3: {{{((XsDevicePtr *)m_data)[0]}, {((XsDevicePtr *)m_data)[1]}, {((XsDevicePtr *)m_data)[2]}}}</DisplayString>
+		<DisplayString Condition="m_size==2">2: {{{((XsDevicePtr *)m_data)[0]}, {((XsDevicePtr *)m_data)[1]}}}</DisplayString>
+		<DisplayString Condition="m_size==1">1: {{{((XsDevicePtr *)m_data)[0]}}}</DisplayString>
+		<DisplayString Condition="m_size==0">&lt;empty&gt;</DisplayString>
+		<!-- too much data, put it under 'expand' -->
+		<DisplayString>{m_size}: {{{((XsDevicePtr *)m_data)[0]}, {((XsDevicePtr *)m_data)[1]}, {((XsDevicePtr *)m_data)[2]}, ...}}</DisplayString>
+		<Expand>
+			<Item Name="m_descriptor">m_descriptor</Item>
+			<Item Name="m_size">m_size</Item>
+			<Item Name="m_reserved">m_reserved</Item>
+			<Item Name="m_flags">XsDataFlags(m_flags)</Item>
+			<ArrayItems>
+				<Size>m_size</Size>
+				<ValuePointer>((XsDevicePtr *)m_data)</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+	<Type Name="XsFilterProfileArray">
+		<!-- display contents of small arrays without expanding -->
+		<DisplayString Condition="m_size==3">3: {{{((XsFilterProfile *)m_data)[0]}, {((XsFilterProfile *)m_data)[1]}, {((XsFilterProfile *)m_data)[2]}}}</DisplayString>
+		<DisplayString Condition="m_size==2">2: {{{((XsFilterProfile *)m_data)[0]}, {((XsFilterProfile *)m_data)[1]}}}</DisplayString>
+		<DisplayString Condition="m_size==1">1: {{{((XsFilterProfile *)m_data)[0]}}}</DisplayString>
+		<DisplayString Condition="m_size==0">&lt;empty&gt;</DisplayString>
+		<!-- too much data, put it under 'expand' -->
+		<DisplayString>{m_size}: {{{((XsFilterProfile *)m_data)[0]}, {((XsFilterProfile *)m_data)[1]}, {((XsFilterProfile *)m_data)[2]}, ...}}</DisplayString>
+		<Expand>
+			<Item Name="m_descriptor">m_descriptor</Item>
+			<Item Name="m_size">m_size</Item>
+			<Item Name="m_reserved">m_reserved</Item>
+			<Item Name="m_flags">XsDataFlags(m_flags)</Item>
+			<ArrayItems>
+				<Size>m_size</Size>
+				<ValuePointer>((XsFilterProfile *)m_data)</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+
+</AutoVisualizer>
