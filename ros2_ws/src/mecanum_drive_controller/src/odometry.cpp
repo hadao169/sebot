@@ -1,124 +1,316 @@
-// Copyright (c) 2023, Stogl Robotics Consulting UG (haftungsbeschränkt)
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/**
+ * @file odometry.cpp
+ * @brief Implementation of odometry calculations for mecanum drive robots
+ *
+ * This implementation handles the unique kinematics of mecanum wheels to track
+ * the robot's position and velocity in 2D space, including holonomic movement.
+ *
+ * Forward Kinematics Equations (all angular velocities in radians/second):
+ * linear_x (m/s) = 1/4 * (R1*w1 + R2*w2 + R3*w3 + R4*w4)
+ * linear_y (m/s) = 1/4 * (-R1*w1 + R2*w2 + R3*w3 - R4*w4)
+ * angular (rad/s) = 1/(4*(L+W)) * (-R1*w1 + R2*w2 - R3*w3 + R4*w4)
+ *
+ * Where:
+ * R1,R2,R3,R4 = individual wheel radii (meters)
+ * L = distance from robot center to front/back wheels (meters)
+ * W = distance from robot center to left/right wheels (meters)
+ * w1,w2,w3,w4 = angular velocities of wheels (radians/second)
+ *
+ * @author Addison Sears-Collins
+ * @date November 18, 2024
+ */
 
 #include "mecanum_drive_controller/odometry.hpp"
 
-#include "tf2/transform_datatypes.hpp"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
-
 namespace mecanum_drive_controller
 {
-Odometry::Odometry()
+
+/**
+ * @brief Constructor for Odometry class
+ * @param velocity_rolling_window_size Size of window for velocity averaging
+ */
+Odometry::Odometry(size_t velocity_rolling_window_size)
 : timestamp_(0.0),
-  position_x_in_base_frame_(0.0),
-  position_y_in_base_frame_(0.0),
-  orientation_z_in_base_frame_(0.0),
-  velocity_in_base_frame_linear_x(0.0),
-  velocity_in_base_frame_linear_y(0.0),
-  velocity_in_base_frame_angular_z(0.0),
-  sum_of_robot_center_projection_on_X_Y_axis_(0.0),
-  wheels_radius_(0.0)
+  x_(0.0),           // Robot x position in meters
+  y_(0.0),           // Robot y position in meters
+  heading_(0.0),     // Robot heading in radians
+  linear_x_(0.0),    // Forward/backward velocity in m/s
+  linear_y_(0.0),    // Left/right velocity in m/s
+  angular_(0.0),     // Angular velocity in rad/s
+  wheel_separation_(0.0),  // Distance between left and right wheels (meters)
+  wheel_base_(0.0),       // Distance between front and back wheels (meters)
+  // Individual wheel radii in meters
+  front_left_wheel_radius_(0.0),
+  front_right_wheel_radius_(0.0),
+  back_left_wheel_radius_(0.0),
+  back_right_wheel_radius_(0.0),
+  // Previous wheel positions in radians
+  front_left_wheel_old_pos_(0.0),
+  front_right_wheel_old_pos_(0.0),
+  back_left_wheel_old_pos_(0.0),
+  back_right_wheel_old_pos_(0.0),
+  velocity_rolling_window_size_(velocity_rolling_window_size),
+  // Initialize rolling average accumulators for each velocity component
+  linear_x_accumulator_(velocity_rolling_window_size),
+  linear_y_accumulator_(velocity_rolling_window_size),
+  angular_accumulator_(velocity_rolling_window_size)
 {
 }
 
-void Odometry::init(
-  const rclcpp::Time & time, std::array<double, PLANAR_POINT_DIM> base_frame_offset)
+/**
+ * @brief Initialize odometry with starting timestamp
+ * @param time Current ROS time
+ */
+void Odometry::init(const rclcpp::Time & time)
 {
-  // Reset timestamp:
+  // Reset all velocity accumulators and set initial timestamp
+  resetAccumulators();
   timestamp_ = time;
-
-  // Base frame offset (wrt to center frame).
-  base_frame_offset_[0] = base_frame_offset[0];
-  base_frame_offset_[1] = base_frame_offset[1];
-  base_frame_offset_[2] = base_frame_offset[2];
 }
 
+/**
+ * @brief Update odometry using wheel position measurements
+ * @param front_left_pos Front left wheel position (radians)
+ * @param front_right_pos Front right wheel position (radians)
+ * @param back_left_pos Back left wheel position (radians)
+ * @param back_right_pos Back right wheel position (radians)
+ * @param time Current ROS time
+ * @return true if update successful, false if time interval too small
+ */
 bool Odometry::update(
-  const double wheel_front_left_vel, const double wheel_rear_left_vel,
-  const double wheel_rear_right_vel, const double wheel_front_right_vel, const double dt)
+  double front_left_pos, double front_right_pos,
+  double back_left_pos, double back_right_pos,
+  const rclcpp::Time & time)
 {
-  /// We cannot estimate the speed with very small time intervals:
-  // const double dt = (time - timestamp_).toSec();
-  if (dt < 0.0001) return false;  // Interval too small to integrate with
+  // Calculate time difference since last update
+  const double dt = time.seconds() - timestamp_.seconds();
 
-  /// Compute FK (i.e. compute mobile robot's body twist out of its wheels velocities):
-  /// NOTE: the mecanum IK gives the body speed at the center frame, we then offset this velocity
-  ///       at the base frame.
-  /// NOTE: in the diff drive the velocity is filtered out, but we prefer to return it raw and
-  ///       let the user perform post-processing at will.
-  ///       We prefer this way of doing as filtering introduces delay (which makes it difficult
-  ///       to interpret and compare behavior curves).
+  // Need reasonable time interval for velocity calculation
+  if (dt < 0.0001)
+  {
+    return false;
+  }
 
-  /// \note The variables meaning:
-  /// angular_transformation_from_center_2_base: Rotation transformation matrix, to transform
-  /// from center frame to base frame
-  /// linear_transformation_from_center_2_base: offset/linear transformation matrix,
-  /// to transform from center frame to base frame
+  // Store current wheel positions (in radians)
+  const double front_left_wheel_cur_pos = front_left_pos;
+  const double front_right_wheel_cur_pos = front_right_pos;
+  const double back_left_wheel_cur_pos = back_left_pos;
+  const double back_right_wheel_cur_pos = back_right_pos;
 
-  double velocity_in_center_frame_linear_x =
-    0.25 * wheels_radius_ *
-    (wheel_front_left_vel + wheel_rear_left_vel + wheel_rear_right_vel + wheel_front_right_vel);
-  double velocity_in_center_frame_linear_y =
-    0.25 * wheels_radius_ *
-    (-wheel_front_left_vel + wheel_rear_left_vel - wheel_rear_right_vel + wheel_front_right_vel);
-  double velocity_in_center_frame_angular_z =
-    0.25 * wheels_radius_ / sum_of_robot_center_projection_on_X_Y_axis_ *
-    (-wheel_front_left_vel - wheel_rear_left_vel + wheel_rear_right_vel + wheel_front_right_vel);
+  // Calculate wheel velocities (rad/s) using position difference
+  const double front_left_wheel_est_vel =
+    (front_left_wheel_cur_pos - front_left_wheel_old_pos_) / dt;
+  const double front_right_wheel_est_vel =
+    (front_right_wheel_cur_pos - front_right_wheel_old_pos_) / dt;
+  const double back_left_wheel_est_vel =
+    (back_left_wheel_cur_pos - back_left_wheel_old_pos_) / dt;
+  const double back_right_wheel_est_vel =
+    (back_right_wheel_cur_pos - back_right_wheel_old_pos_) / dt;
 
-  tf2::Quaternion orientation_R_c_b;
-  orientation_R_c_b.setRPY(0.0, 0.0, -base_frame_offset_[2]);
+  // Save current positions for next update
+  front_left_wheel_old_pos_ = front_left_wheel_cur_pos;
+  front_right_wheel_old_pos_ = front_right_wheel_cur_pos;
+  back_left_wheel_old_pos_ = back_left_wheel_cur_pos;
+  back_right_wheel_old_pos_ = back_right_wheel_cur_pos;
 
-  tf2::Matrix3x3 angular_transformation_from_center_2_base = tf2::Matrix3x3((orientation_R_c_b));
-  tf2::Vector3 velocity_in_center_frame_w_r_t_base_frame_ =
-    angular_transformation_from_center_2_base *
-    tf2::Vector3(velocity_in_center_frame_linear_x, velocity_in_center_frame_linear_y, 0.0);
-  tf2::Vector3 linear_transformation_from_center_2_base =
-    angular_transformation_from_center_2_base *
-    tf2::Vector3(-base_frame_offset_[0], -base_frame_offset_[1], 0.0);
-
-  velocity_in_base_frame_linear_x =
-    velocity_in_center_frame_w_r_t_base_frame_.x() +
-    linear_transformation_from_center_2_base.y() * velocity_in_center_frame_angular_z;
-  velocity_in_base_frame_linear_y =
-    velocity_in_center_frame_w_r_t_base_frame_.y() -
-    linear_transformation_from_center_2_base.x() * velocity_in_center_frame_angular_z;
-  velocity_in_base_frame_angular_z = velocity_in_center_frame_angular_z;
-
-  /// Integration.
-  /// NOTE: the position is expressed in the odometry frame , unlike the twist which is
-  ///       expressed in the body frame.
-  orientation_z_in_base_frame_ += velocity_in_base_frame_angular_z * dt;
-
-  tf2::Quaternion orientation_R_b_odom;
-  orientation_R_b_odom.setRPY(0.0, 0.0, orientation_z_in_base_frame_);
-
-  tf2::Matrix3x3 angular_transformation_from_base_2_odom = tf2::Matrix3x3((orientation_R_b_odom));
-  tf2::Vector3 velocity_in_base_frame_w_r_t_odom_frame_ =
-    angular_transformation_from_base_2_odom *
-    tf2::Vector3(velocity_in_base_frame_linear_x, velocity_in_base_frame_linear_y, 0.0);
-
-  position_x_in_base_frame_ += velocity_in_base_frame_w_r_t_odom_frame_.x() * dt;
-  position_y_in_base_frame_ += velocity_in_base_frame_w_r_t_odom_frame_.y() * dt;
+  // Update odometry using calculated velocities
+  updateFromVelocity(
+    front_left_wheel_est_vel, front_right_wheel_est_vel,
+    back_left_wheel_est_vel, back_right_wheel_est_vel,
+    time);
 
   return true;
 }
 
-void Odometry::setWheelsParams(
-  const double sum_of_robot_center_projection_on_X_Y_axis, const double wheels_radius)
+/**
+ * @brief Update odometry using wheel velocity measurements
+ * @param front_left_vel Front left wheel velocity (rad/s)
+ * @param front_right_vel Front right wheel velocity (rad/s)
+ * @param back_left_vel Back left wheel velocity (rad/s)
+ * @param back_right_vel Back right wheel velocity (rad/s)
+ * @param time Current ROS time
+ * @return true if update successful
+ */
+bool Odometry::updateFromVelocity(
+  double front_left_vel, double front_right_vel,
+  double back_left_vel, double back_right_vel,
+  const rclcpp::Time & time)
 {
-  sum_of_robot_center_projection_on_X_Y_axis_ = sum_of_robot_center_projection_on_X_Y_axis;
-  wheels_radius_ = wheels_radius;
+  const double dt = time.seconds() - timestamp_.seconds();
+
+  // Calculate distances from robot center to wheels (meters)
+  const double L = wheel_base_ / 2.0;      // Distance to front/back wheels
+  const double W = wheel_separation_ / 2.0; // Distance to left/right wheels
+
+  // Calculate robot velocity components using mecanum wheel kinematics
+  // Each wheel contributes to motion in all directions based on its orientation
+
+  // Forward/backward velocity (m/s)
+  const double linear_x = (front_left_wheel_radius_ * front_left_vel +
+                          front_right_wheel_radius_ * front_right_vel +
+                          back_left_wheel_radius_ * back_left_vel +
+                          back_right_wheel_radius_ * back_right_vel) * 0.25;
+
+  // Left/right velocity (m/s)
+  const double linear_y = (-front_left_wheel_radius_ * front_left_vel +
+                          front_right_wheel_radius_ * front_right_vel +
+                          back_left_wheel_radius_ * back_left_vel -
+                          back_right_wheel_radius_ * back_right_vel) * 0.25;
+
+  // Angular velocity (rad/s)
+  const double angular = (-front_left_wheel_radius_ * front_left_vel +
+                         front_right_wheel_radius_ * front_right_vel -
+                         back_left_wheel_radius_ * back_left_vel +
+                         back_right_wheel_radius_ * back_right_vel) /
+                        (4.0 * (L + W));
+
+  // Update robot's position and orientation
+  integrateExact(linear_x * dt, linear_y * dt, angular * dt);
+
+  timestamp_ = time;
+
+  // Update velocity estimates using rolling mean for smoothing
+  linear_x_accumulator_.accumulate(linear_x);
+  linear_y_accumulator_.accumulate(linear_y);
+  angular_accumulator_.accumulate(angular);
+
+  linear_x_ = linear_x_accumulator_.getRollingMean();
+  linear_y_ = linear_y_accumulator_.getRollingMean();
+  angular_ = angular_accumulator_.getRollingMean();
+
+  return true;
+}
+
+/**
+ * @brief Update odometry using direct velocity commands (open loop)
+ * @param linear_x Forward/backward velocity (m/s)
+ * @param linear_y Left/right velocity (m/s)
+ * @param angular Angular velocity (rad/s)
+ * @param time Current ROS time
+ */
+void Odometry::updateOpenLoop(
+  double linear_x, double linear_y, double angular,
+  const rclcpp::Time & time)
+{
+  // Store current velocities
+  linear_x_ = linear_x;
+  linear_y_ = linear_y;
+  angular_ = angular;
+
+  // Calculate position change over time interval
+  const double dt = time.seconds() - timestamp_.seconds();
+  timestamp_ = time;
+
+  // Update position and orientation
+  integrateExact(linear_x * dt, linear_y * dt, angular * dt);
+}
+
+/**
+ * @brief Reset odometry to initial state (0,0,0)
+ */
+void Odometry::resetOdometry()
+{
+  x_ = 0.0;        // meters
+  y_ = 0.0;        // meters
+  heading_ = 0.0;  // radians
+}
+
+/**
+ * @brief Set physical parameters of the robot
+ * @param wheel_separation Distance between left and right wheels (meters)
+ * @param wheel_base Distance between front and back wheels (meters)
+ * @param front_left_wheel_radius Radius of front left wheel (meters)
+ * @param front_right_wheel_radius Radius of front right wheel (meters)
+ * @param back_left_wheel_radius Radius of back left wheel (meters)
+ * @param back_right_wheel_radius Radius of back right wheel (meters)
+ */
+void Odometry::setWheelParams(
+  double wheel_separation,
+  double wheel_base,
+  double front_left_wheel_radius,
+  double front_right_wheel_radius,
+  double back_left_wheel_radius,
+  double back_right_wheel_radius)
+{
+  wheel_separation_ = wheel_separation;
+  wheel_base_ = wheel_base;
+  front_left_wheel_radius_ = front_left_wheel_radius;
+  front_right_wheel_radius_ = front_right_wheel_radius;
+  back_left_wheel_radius_ = back_left_wheel_radius;
+  back_right_wheel_radius_ = back_right_wheel_radius;
+}
+
+/**
+ * @brief Set size of velocity rolling window
+ * @param velocity_rolling_window_size Number of samples to average
+ */
+void Odometry::setVelocityRollingWindowSize(size_t velocity_rolling_window_size)
+{
+  velocity_rolling_window_size_ = velocity_rolling_window_size;
+  resetAccumulators();
+}
+
+/**
+ * @brief Integrate robot motion using Runge-Kutta 2nd order method
+ * Used for small angular velocities
+ * @param linear_x Distance moved forward/backward (meters)
+ * @param linear_y Distance moved left/right (meters)
+ * @param angular Angle rotated (radians)
+ */
+void Odometry::integrateRungeKutta2(
+  double linear_x, double linear_y, double angular)
+{
+  // Calculate intermediate heading
+  const double direction = heading_ + angular * 0.5;
+
+  // Runge-Kutta 2nd order integration
+  const double cos_h = cos(direction);
+  const double sin_h = sin(direction);
+
+  // Transform velocities from robot frame to world frame
+  x_ += linear_x * cos_h - linear_y * sin_h;  // meters
+  y_ += linear_x * sin_h + linear_y * cos_h;  // meters
+  heading_ += angular;  // radians
+}
+
+/**
+ * @brief Integrate robot motion using exact method or RK2 for small angles
+ * @param linear_x Distance moved forward/backward (meters)
+ * @param linear_y Distance moved left/right (meters)
+ * @param angular Angle rotated (radians)
+ */
+void Odometry::integrateExact(
+  double linear_x, double linear_y, double angular)
+{
+  // Use RK2 for very small angular motions
+  if (fabs(angular) < 1e-6)
+  {
+    integrateRungeKutta2(linear_x, linear_y, angular);
+  }
+  else
+  {
+    // Exact integration for larger angular motions
+    const double heading_old = heading_;
+    const double r = sqrt(linear_x * linear_x + linear_y * linear_y) / angular;
+    heading_ += angular;
+
+    // Calculate the angle of the linear velocity vector
+    const double vel_angle = atan2(linear_y, linear_x);
+
+    // Transform from robot frame to world frame
+    x_ += r * (sin(heading_ + vel_angle) - sin(heading_old + vel_angle));  // meters
+    y_ += -r * (cos(heading_ + vel_angle) - cos(heading_old + vel_angle)); // meters
+  }
+}
+
+/**
+ * @brief Reset velocity rolling mean accumulators
+ */
+void Odometry::resetAccumulators()
+{
+  linear_x_accumulator_ = RollingMeanAccumulator(velocity_rolling_window_size_);
+  linear_y_accumulator_ = RollingMeanAccumulator(velocity_rolling_window_size_);
+  angular_accumulator_ = RollingMeanAccumulator(velocity_rolling_window_size_);
 }
 
 }  // namespace mecanum_drive_controller
