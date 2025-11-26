@@ -37,14 +37,15 @@
       </material>
     </visual>
   </link>
+
   <link name="caster_wheel">
     <visual>
       <geometry>
         <sphere radius="0.05"/>
-        <!-- Pieni pyörä, säde 0.05m --></geometry>
+      </geometry>
       <material name="gray">
         <color rgba="0.5 0.5 0.5 1"/>
-        <!-- Harmaa väri --></material>
+      </material>
     </visual>
   </link>
 
@@ -52,10 +53,10 @@
     <visual>
       <geometry>
         <box size="0.1 0.1 0.05"/>
-        <!-- IMU:n koko --></geometry>
+      </geometry>
       <material name="red">
         <color rgba="1 0 0 1"/>
-        <!-- Punainen väri --></material>
+      </material>
     </visual>
   </link>
 
@@ -81,4 +82,4 @@
     <child link="caster_wheel"/>
     <origin xyz="0.2 0 -0.05" rpy="0 0 0"/>
   </joint>
-  </robot>
+</robot>

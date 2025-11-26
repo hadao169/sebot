@@ -47,7 +47,7 @@ class OdomNode(Node):
 
     self.odom_publisher = self.create_publisher(
         Odometry,
-        'odom',
+        'wheel/odom',
         10
     )
 
@@ -65,10 +65,10 @@ class OdomNode(Node):
     # Store the information in the message so it can be processed in timer_callback
     self.left_encoder.update(message.encoder1)
     self.right_encoder.update(-message.encoder2)
-    self.get_logger().info(f'Encoders updated: L={message.encoder1}, R={message.encoder2}')
     self.update = True
 
   def timer_callback(self):
+
     if not self.update: return
     self.update = False
     current_time = self.get_clock().now().nanoseconds
