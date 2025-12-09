@@ -50,3 +50,5 @@ build
 install
 log
 www
+
+./note.txt
