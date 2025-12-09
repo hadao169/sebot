@@ -4,13 +4,13 @@ motordriver_node:
     simulation: True
 odom_node:
   ros__parameters:
-    wheel_radius: 0.0345
-    wheel_base: 0.212
+    wheel_radius: 0.0335
+    wheel_base: 0.215
     ticks_per_revolution: 1000
 cmd_vel_node:
   ros__parameters:
-    wheel_radius: 0.0345
-    wheel_base: 0.212
+    wheel_radius: 0.0335
+    wheel_base: 0.215
 battery_alert_node:
   ros__parameters:
     threshold: 10.5

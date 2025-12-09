@@ -18,9 +18,9 @@ class OdomImuNode(Node):
   def __init__(self):
     super().__init__('odom_node')
 
-    self.declare_parameter('wheel_radius', 0.1)
-    self.declare_parameter('wheel_base', 0.5)
-    self.declare_parameter('ticks_per_revolution', 1075)
+    self.declare_parameter('wheel_radius', 0.0345)
+    self.declare_parameter('wheel_base', 0.212)
+    self.declare_parameter('ticks_per_revolution', 1000)
 
     self.wheel_radius = self.get_parameter('wheel_radius').value
     self.wheel_base = self.get_parameter('wheel_base').value
