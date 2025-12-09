@@ -22,7 +22,9 @@ def generate_launch_description():
         urdf_file_name)
     with open(urdf, 'r') as infp:
         robot_desc = infp.read()
-    print("Robot description read from file:", urdf)
+    print(urdf)
+    if not robot_desc.strip():
+        raise RuntimeError("robot_description is empty! Check your URDF file.")
 
 
     xsens_launch = IncludeLaunchDescription(
@@ -31,6 +33,16 @@ def generate_launch_description():
                 get_package_share_directory('xsens_mti_ros2_driver'),
                 'launch',
                 'xsens_mti_node.launch.py'
+            )
+        )
+    )
+
+    ekf_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory('sebot_localization'),
+                'launch',
+                'ekf.launch.py'
             )
         )
     )
@@ -96,22 +108,10 @@ def generate_launch_description():
               'params.yaml')]
         ),
 
-        # Node(
-        #     package='diffdrive',
-        #     executable='odom',
-        #     name='odom_node',
-        #     #namespace = NAMESPACE,
-        #     output='screen',
-        #     parameters=[os.path.join(
-        #       colcon_prefix_path,
-        #       'config',
-        #       'params.yaml')]
-        # ),
-
         Node(
             package='diffdrive',
-            executable='odom_imu',
-            name='odom_imu_node',
+            executable='odom',
+            name='odom_node',
             #namespace = NAMESPACE,
             output='screen',
             parameters=[os.path.join(
@@ -119,6 +119,18 @@ def generate_launch_description():
               'config',
               'params.yaml')]
         ),
+
+        # Node(
+        #     package='diffdrive',
+        #     executable='odom_imu',
+        #     name='odom_imu_node',
+        #     #namespace = NAMESPACE,
+        #     output='screen',
+        #     parameters=[os.path.join(
+        #       colcon_prefix_path,
+        #       'config',
+        #       'params.yaml')]
+        # ),
         
         Node(
             package='diffdrive',
@@ -132,4 +144,6 @@ def generate_launch_description():
               'params.yaml')]
         ),
         xsens_launch,
+        ekf_launch,
     ])
+

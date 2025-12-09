@@ -18,9 +18,9 @@ class OdomNode(Node):
     super().__init__('odom_node')
 
     # Read parameters
-    self.declare_parameter('wheel_radius', 0.1)
-    self.declare_parameter('wheel_base', 0.5)
-    self.declare_parameter('ticks_per_revolution', 1075)
+    self.declare_parameter('wheel_radius', 0.0345)
+    self.declare_parameter('wheel_base', 0.215)
+    self.declare_parameter('ticks_per_revolution', 1000)
 
     # Get the values of the parameters
     self.wheel_radius = self.get_parameter('wheel_radius').value
@@ -47,7 +47,7 @@ class OdomNode(Node):
 
     self.odom_publisher = self.create_publisher(
         Odometry,
-        'odom',
+        'wheel/odom',
         10
     )
 
@@ -65,10 +65,10 @@ class OdomNode(Node):
     # Store the information in the message so it can be processed in timer_callback
     self.left_encoder.update(message.encoder1)
     self.right_encoder.update(-message.encoder2)
-    self.get_logger().info(f'Encoders updated: L={message.encoder1}, R={message.encoder2}')
     self.update = True
 
   def timer_callback(self):
+
     if not self.update: return
     self.update = False
     current_time = self.get_clock().now().nanoseconds

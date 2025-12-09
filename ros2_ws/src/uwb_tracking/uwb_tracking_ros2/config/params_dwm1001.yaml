@@ -1,0 +1,18 @@
+uwb_tracking_dwm1001:  
+  ros__parameters:      
+    port: "/dev/ttyACM0"
+    tag_name: "DW58B6"
+    use_network: True
+    network: "0x59D9"
+    verbose: True
+    read_rate: 10.0
+    tag_id: "0xDECAC2066165878F"
+    mac_id: "C4:22:04:B9:DE:53"
+    anchors: 
+      - {id: "0xDECAC2066165878F", x: 0.0, y: 0.0, z: 0.08}
+      - {id: "0xDECAC2066165880A", x: 4.0, y: 0.0, z: 0.08}
+      - {id: "0xDECAC2066165881B", x: 4.0, y: 4.0, z: 0.08}
+      - {id: "0xDECAC2066165882C", x: 0.0, y: 4.0, z: 0.08}
+    use_least_square: True
+    least_square_max_iterations: 10
+    least_square_tolerance: 0.01

@@ -37,16 +37,34 @@
       </material>
     </visual>
   </link>
+
   <link name="caster_wheel">
     <visual>
       <geometry>
         <sphere radius="0.05"/>
-        <!-- Pieni pyörä, säde 0.05m --></geometry>
+      </geometry>
       <material name="gray">
         <color rgba="0.5 0.5 0.5 1"/>
-        <!-- Harmaa väri --></material>
+      </material>
     </visual>
   </link>
+
+  <link name="imu_link1">
+    <visual>
+      <geometry>
+        <box size="0.1 0.1 0.05"/>
+      </geometry>
+      <material name="red">
+        <color rgba="1 0 0 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="base_to_imu_link1" type="fixed">
+    <parent link="base_link"/>
+    <child link="imu_link1"/>
+    <origin xyz="0 0 0.1" rpy="0 0 0"/>
+  </joint>
   <joint name="base_to_left_wheel" type="fixed">
     <parent link="base_link"/>
     <child link="left_wheel"/>
