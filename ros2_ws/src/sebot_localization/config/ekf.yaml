@@ -15,14 +15,14 @@ ekf_filter_node:
         publish_tf: true
         map_frame: map              # Defaults to "map" if unspecified
         odom_frame: odom            # Defaults to "odom" if unspecified
-        base_link_frame: base_link  # Defaults to "base_link" if unspecified
+        base_link_frame: base_footprint  # Defaults to "base_link" if unspecified
         world_frame: odom           # Defaults to the value of odom_frame if unspecified
 
         odom0: /wheel/odom
 
         odom0_config: [false,  false,  false,
                        false, false, false,
-                       true, true, false, #have to  
+                       true, false, false, #have to  
                        false, false, true,
                        false, false, false]  # should not use both position and velocity from encoder because position is integrated from velocity, so technically they are not independent measurements => if use both, the filter will consider them as 2 separate measurements and give more confidence to the encoder data which may lead to bad results. => recommend to use only velocity and ekf filter will be responsible for position integration combining other sensors data.
         odom0_queue_size: 2

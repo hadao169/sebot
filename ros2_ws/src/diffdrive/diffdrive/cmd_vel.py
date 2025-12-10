@@ -11,9 +11,9 @@ class CmdVelNode(Node):
     super().__init__('cmd_vel_node')
 
     # Lue parametrit
-    self.declare_parameter('wheel_radius', 0.1)
-    self.declare_parameter('wheel_base', 0.5)
-    self.declare_parameter('ticks_per_revolution', 1075)
+    self.declare_parameter('wheel_radius', 0.0335)
+    self.declare_parameter('wheel_base', 0,215)
+    self.declare_parameter('ticks_per_revolution', 2000)
 
     # Hae parametrien arvot
     self.wheel_radius = self.get_parameter('wheel_radius').value
@@ -53,8 +53,8 @@ class CmdVelNode(Node):
   def cmd_vel_callback(self, msg):
     # mps_l = vasen rengas m/s
     # mps_r = oikea rengas m/s
-    mps_l = -(msg.linear.x - (msg.angular.z * self.wheel_base / 2.0))
-    mps_r = (msg.linear.x + (msg.angular.z * self.wheel_base / 2.0))
+    mps_l = -(msg.linear.x + (msg.angular.z * self.wheel_base / 2.0))
+    mps_r = (msg.linear.x - (msg.angular.z * self.wheel_base / 2.0))
 
     string_msg = String()
     string_msg.data = "SPD;%i;%i;"%(self.mps_to_spd(mps_l), self.mps_to_spd(mps_r))

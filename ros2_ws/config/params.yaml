@@ -6,14 +6,9 @@ odom_node:
   ros__parameters:
     wheel_radius: 0.0335
     wheel_base: 0.215
-    ticks_per_revolution: 1000
+    ticks_per_revolution: 2000
 cmd_vel_node:
   ros__parameters:
     wheel_radius: 0.0335
     wheel_base: 0.215
-battery_alert_node:
-  ros__parameters:
-    threshold: 10.5
-battery_republish_node:
-  ros__parameters:
-    battery_check_interval: 5.0
+    ticks_per_revolution: 2000
