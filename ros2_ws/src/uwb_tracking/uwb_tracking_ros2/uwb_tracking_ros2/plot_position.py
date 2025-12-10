@@ -47,10 +47,10 @@ class LSPosePlotter(Node):
         )
         self.ax.add_patch(self.error_circle)
 
-        # 2. Quỹ đạo (Track Line)
+        # track Line
         self.track_line, = self.ax.plot([], [], 'k--', alpha=0.5, label='Path Track', zorder=2) 
 
-        # 3. Vị trí Tag (Chấm đỏ, điểm cuối cùng)
+        # Tag position
         self.sc = self.ax.scatter([], [], c='r', label='Current Position', s=50, zorder=3) 
         
         self.ax.legend(loc='upper right')
@@ -58,7 +58,7 @@ class LSPosePlotter(Node):
         self.create_timer(0.1, self.redraw)
 
     def pose_callback(self, msg: PoseStamped):
-        # Chuyển đổi từ M sang CM
+        # m -> cm
         x_cm = msg.pose.position.x * 100.0
         y_cm = msg.pose.position.y * 100.0
         
@@ -73,13 +73,13 @@ class LSPosePlotter(Node):
         current_x = self.xs[-1]
         current_y = self.ys[-1]
         
-        # Cập nhật Quỹ đạo
+        # Cập nhật quỹ đạo
         self.track_line.set_data(list(self.xs), list(self.ys))
 
-        # Cập nhật Vị trí Tag (chấm đỏ)
+        # Cập nhật vị trí tag
         self.sc.set_offsets(np.array([[current_x, current_y]]))
         
-        # Cập nhật Vòng tròn Sai số (Đặt tâm vào vị trí hiện tại)
+        # Cập nhật vòng tròn sai số 
         self.error_circle.center = (current_x, current_y)
         
         # Tự động co giãn trục
@@ -88,8 +88,6 @@ class LSPosePlotter(Node):
         
         self.fig.canvas.draw_idle()
         self.fig.canvas.flush_events()
-
-# ... (main function không thay đổi)
 
 def main(args=None):
     rclpy.init(args=args)
