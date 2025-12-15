@@ -28,17 +28,15 @@ class LSPosePlotter(Node):
         plt.ion() 
         self.fig, self.ax = plt.subplots()
         
-        # Cấu hình Axes
         self.ax.set_title(f'Real-time LS Position & Error Bound')
         self.ax.set_xlabel('X [cm]') 
         self.ax.set_ylabel('Y [cm]')
         self.ax.grid(True)
         self.ax.set_aspect('equal', adjustable='box') 
         
-        # 1. Vòng tròn Sai số (Radius = 10cm)
         self.error_radius = 10.0 
         self.error_circle = patches.Circle(
-            (0, 0), # Center (x, y)
+            (0, 0), 
             self.error_radius,
             color='b', 
             alpha=0.2, 
@@ -47,10 +45,8 @@ class LSPosePlotter(Node):
         )
         self.ax.add_patch(self.error_circle)
 
-        # 2. Quỹ đạo (Track Line)
         self.track_line, = self.ax.plot([], [], 'k--', alpha=0.5, label='Path Track', zorder=2) 
 
-        # 3. Vị trí Tag (Chấm đỏ, điểm cuối cùng)
         self.sc = self.ax.scatter([], [], c='r', label='Current Position', s=50, zorder=3) 
         
         self.ax.legend(loc='upper right')
@@ -58,7 +54,6 @@ class LSPosePlotter(Node):
         self.create_timer(0.1, self.redraw)
 
     def pose_callback(self, msg: PoseStamped):
-        # Chuyển đổi từ M sang CM
         x_cm = msg.pose.position.x * 100.0
         y_cm = msg.pose.position.y * 100.0
         
@@ -73,23 +68,17 @@ class LSPosePlotter(Node):
         current_x = self.xs[-1]
         current_y = self.ys[-1]
         
-        # Cập nhật Quỹ đạo
         self.track_line.set_data(list(self.xs), list(self.ys))
 
-        # Cập nhật Vị trí Tag (chấm đỏ)
         self.sc.set_offsets(np.array([[current_x, current_y]]))
         
-        # Cập nhật Vòng tròn Sai số (Đặt tâm vào vị trí hiện tại)
         self.error_circle.center = (current_x, current_y)
         
-        # Tự động co giãn trục
         self.ax.relim()
         self.ax.autoscale_view()
         
         self.fig.canvas.draw_idle()
         self.fig.canvas.flush_events()
-
-# ... (main function không thay đổi)
 
 def main(args=None):
     rclpy.init(args=args)

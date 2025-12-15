@@ -6,9 +6,11 @@ odom_node:
   ros__parameters:
     wheel_radius: 0.0335
     wheel_base: 0.215
-    ticks_per_revolution: 2000
+    ticks_per_revolution_l: 2000
+    ticks_per_revolution_r: 2000
 cmd_vel_node:
   ros__parameters:
     wheel_radius: 0.0335
     wheel_base: 0.215
-    ticks_per_revolution: 2000
+    ticks_per_revolution_l: 2000
+    ticks_per_revolution_r: 2000

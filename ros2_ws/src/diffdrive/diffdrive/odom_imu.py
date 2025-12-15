@@ -20,18 +20,21 @@ class OdomImuNode(Node):
 
     self.declare_parameter('wheel_radius', 0.0335)
     self.declare_parameter('wheel_base', 0,215)
-    self.declare_parameter('ticks_per_revolution', 2000)
-
+    self.declare_parameter('ticks_per_revolution_l', 2006)
+    self.declare_parameter('ticks_per_revolution_r', 1992)
+    
+    # Hae parametrien arvot
     self.wheel_radius = self.get_parameter('wheel_radius').value
     self.wheel_base = self.get_parameter('wheel_base').value
-    self.ticks_per_revolution = self.get_parameter('ticks_per_revolution').value
+    self.ticks_per_revolution_l = self.get_parameter('ticks_per_revolution_l').value
+    self.ticks_per_revolution_r = self.get_parameter('ticks_per_revolution_r').value
 
     self.get_logger().info(f'Wheel radius: {self.wheel_radius}')
     self.get_logger().info(f'Wheel distance: {self.wheel_base}')
     self.get_logger().info(f'Sensor revolution: {self.ticks_per_revolution}')
 
-    self.left_encoder = Encoder(self.wheel_radius, self.ticks_per_revolution)
-    self.right_encoder = Encoder(self.wheel_radius, self.ticks_per_revolution)
+    self.left_encoder = Encoder(self.wheel_radius, self.ticks_per_revolution_l)
+    self.right_encoder = Encoder(self.wheel_radius, self.ticks_per_revolution_r)
 
     self.odom_theta = 0.0
     self.odom_x = 0.0

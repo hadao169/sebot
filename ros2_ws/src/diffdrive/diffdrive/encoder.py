@@ -72,3 +72,7 @@ class Encoder():
       d = (self.prev_position - self.position) / self.ticks_per_meter
       self.prev_position = self.position
       return d
+
+  
+  def getEncoder(self):
+    return self.ticks_per_meter, self.ticks_per_revolution

@@ -151,13 +151,12 @@ class dwm1001_localizer(Node):
                     # self.publishTagPoseKF(self.tag_id,self.tag_macID, pose_data)
         except Exception:
             pass
-    def publishTagPoseLS(self, tag_id: int, tag_macID: str, serialReadLine):
-        self.get_logger().info(f"=== [LS] Callback Triggered for {tag_macID} ===")
 
+    # Try-catch block for debugging
+    def publishTagPoseLS(self, tag_id: int, tag_macID: str, serialReadLine):
         try:
             serialReadLine_str = serialReadLine.decode('UTF-8', errors='ignore')
             raw_uwb_data = serialReadLine_str.strip().split()
-            self.get_logger().info(f"[LS-RAW] {raw_uwb_data}")
         except Exception as e:
             self.get_logger().error(f"[LS-ERROR] Decode/Split Failed: {e}")
             return
@@ -168,42 +167,30 @@ class dwm1001_localizer(Node):
 
         ls_object = self.topics_ls[tag_macID]
 
-        try:
-            ls_object.process_uwb_data(raw_uwb_data)
-        except Exception as e:
-            self.get_logger().error(f"[LS] process_uwb_data ERROR: {e}")
-            return
+        ls_object.process_uwb_data(raw_uwb_data)
+ 
+        self.get_logger().info(f"original_position = {ls_object.original_position}")
 
-        self.get_logger().info(
-            f"[LS] Measurements count = {len(ls_object.measurements)},  "
-            f"original_position = {ls_object.original_position}"
-        )
+        # if not ls_object.measurements:
+        #     self.get_logger().warn("[LS] No measurements → SKIP LS")
+        #     return
 
-        if not ls_object.measurements:
-            self.get_logger().warn("[LS] No measurements → SKIP LS")
-            return
-
-        if ls_object.original_position is None:
-            self.get_logger().warn("[LS] No original position → SKIP LS")
-            return
+        # if ls_object.original_position is None:
+        #     self.get_logger().warn("[LS] No original position → SKIP LS")
+        #     return
 
         try:
             estimated_x, estimated_y = ls_object.estimate_position(
                 max_iterations=self.least_square_max_iterations,
                 tolerance=self.least_square_tolerance
             )
-            self.get_logger().info(f"[LS] Estimated: x={estimated_x}, y={estimated_y}")
+            # self.get_logger().info(f"[LS] Estimated: x={estimated_x}, y={estimated_y}")
         except Exception as e:
             self.get_logger().error(f"[LS] estimate_position ERROR: {e}")
             return
 
         xyz = [estimated_x, estimated_y, 0.0]
-        try:
-            ps = create_pose_stamped(self, xyz, tag_macID)
-        except Exception as e:
-            self.get_logger().error(f"[LS] create_pose_stamped ERROR: {e}")
-            return
-
+        ps = create_pose_stamped(self, xyz, tag_macID)
         clean_id_str = tag_macID.replace(':', '_')
 
         pub = get_tag_publisher(
@@ -217,14 +204,9 @@ class dwm1001_localizer(Node):
             self.get_logger().error("[LS] get_tag_publisher returned NONE!")
             return
 
-
         self.get_logger().info("[LS] Publishing PoseStamped...")
-        try:
-            pub.publish(ps)
-        except Exception as e:
-            self.get_logger().error(f"[LS] Publish ERROR: {e}")
-            return
-
+        
+        pub.publish(ps)
 
         tag = CustomTag()
         tag.header = ps.header
@@ -232,24 +214,15 @@ class dwm1001_localizer(Node):
         tag.orientation_w = ps.pose.orientation.w
 
         if not hasattr(self, "multipleTags_ls"):
-            self.get_logger().info("[LS] Creating new MultiTags_ls")
             self.multipleTags_ls = MultiTags()
 
-        try:
-            update_multitags_list(self.multipleTags_ls, tag, tag_macID)
-        except Exception as e:
-            self.get_logger().error(f"[LS] update_multitags_list ERROR: {e}")
-
+        update_multitags_list(self.multipleTags_ls, tag, tag_macID)
 
         if not hasattr(self, "pub_tags_ls"):
-            self.get_logger().info("[LS] Creating publisher /multiTags_ls")
             self.pub_tags_ls = self.create_publisher(MultiTags, "/dwm1001/multiTags_ls", 100)
 
-        try:
-            self.pub_tags_ls.publish(self.multipleTags_ls)
-            self.get_logger().info("[LS] Published MultiTags_ls")
-        except Exception as e:
-            self.get_logger().error(f"[LS] Publish MultiTags ERROR: {e}")
+        self.pub_tags_ls.publish(self.multipleTags_ls)
+        self.get_logger().info("[LS] Published MultiTags_ls")
 
 
     def publishTagPositions(self, pose_data: list):

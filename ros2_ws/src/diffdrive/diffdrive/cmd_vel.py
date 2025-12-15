@@ -12,17 +12,19 @@ class CmdVelNode(Node):
 
     # Lue parametrit
     self.declare_parameter('wheel_radius', 0.0335)
-    self.declare_parameter('wheel_base', 0,215)
-    self.declare_parameter('ticks_per_revolution', 2000)
+    self.declare_parameter('wheel_base', 0.215)
+    self.declare_parameter('ticks_per_revolution_l', 2006)
+    self.declare_parameter('ticks_per_revolution_r', 1992)
 
     # Hae parametrien arvot
     self.wheel_radius = self.get_parameter('wheel_radius').value
     self.wheel_base = self.get_parameter('wheel_base').value
-    self.ticks_per_revolution = self.get_parameter('ticks_per_revolution').value
+    self.ticks_per_revolution_l = self.get_parameter('ticks_per_revolution_l').value
+    self.ticks_per_revolution_r = self.get_parameter('ticks_per_revolution_r').value
 
     self.get_logger().info(f'Pyörän säde: {self.wheel_radius}')
     self.get_logger().info(f'Pyörien etäisyys: {self.wheel_base}')
-    self.get_logger().info(f'Anturin kierros: {self.ticks_per_revolution}')
+    # self.get_logger().info(f'Anturin kierros: {self.ticks_per_revolution}')
 
     self.cmd_vel_subscriber = self.create_subscription(
         Twist,
@@ -37,7 +39,7 @@ class CmdVelNode(Node):
         10
     )
 
-  def mps_to_spd(self,mps):
+  def mps_to_spd_l(self,mps):
     # muunnetan m/s moottoriohjaimen spd arvoksi
     pid_freq = 10 # Moottoriohjain päivittyy 10Hz taajuudella
 
@@ -47,7 +49,19 @@ class CmdVelNode(Node):
     # RPM
     rpm = radps * ( 60 / ( 2 * math.pi ) )
     
-    spd = rpm * (self.ticks_per_revolution / 60 / pid_freq)
+    spd = rpm * (self.ticks_per_revolution_l / 60 / pid_freq)
+    return spd
+  
+  def mps_to_spd_r(self,mps):
+    # muunnetan m/s moottoriohjaimen spd arvoksi
+    pid_freq = 10 # Moottoriohjain päivittyy 10Hz taajuudella
+
+    # kulmanopeus (rad/s)
+    radps = mps / self.wheel_radius
+
+    # RPM
+    rpm = radps * ( 60 / ( 2 * math.pi ) )
+    spd = rpm * (self.ticks_per_revolution_r  / 60 / pid_freq)
     return spd
 
   def cmd_vel_callback(self, msg):
@@ -57,7 +71,7 @@ class CmdVelNode(Node):
     mps_r = (msg.linear.x - (msg.angular.z * self.wheel_base / 2.0))
 
     string_msg = String()
-    string_msg.data = "SPD;%i;%i;"%(self.mps_to_spd(mps_l), self.mps_to_spd(mps_r))
+    string_msg.data = "SPD;%i;%i;"%(self.mps_to_spd_r(mps_l), self.mps_to_spd_r(mps_r))
     
     self.mc_publisher.publish(string_msg)
 

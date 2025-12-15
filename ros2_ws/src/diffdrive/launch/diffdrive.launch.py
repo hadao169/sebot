@@ -64,14 +64,14 @@ def generate_launch_description():
             #arguments=[urdf] # 26.5.2025 tämä on tarpeeton rivi, sillä robot_state_publisher ei parsi komentokehotteen argumentteja.
         ),
 
-        Node(
-            package='joint_state_publisher_gui',
-            executable='joint_state_publisher_gui',
-            name='joint_state_publisher_gui',
-            output='screen',
-            #namespace = NAMESPACE,
-            parameters=[{'use_sim_time': use_sim_time}],
-        ),
+        # Node(
+        #     package='joint_state_publisher_gui',
+        #     executable='joint_state_publisher_gui',
+        #     name='joint_state_publisher_gui',
+        #     output='screen',
+        #     #namespace = NAMESPACE,
+        #     parameters=[{'use_sim_time': use_sim_time}],
+        # ),
 
         Node(
             package='rviz2',
