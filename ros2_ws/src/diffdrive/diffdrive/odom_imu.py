@@ -13,159 +13,129 @@ try:
 except ImportError:
     from encoder import Encoder
 
-
 class OdomImuNode(Node):
-  def __init__(self):
-    super().__init__('odom_node')
+    def __init__(self):
+        super().__init__('odom_node')
 
-    self.declare_parameter('wheel_radius', 0.0335)
-    self.declare_parameter('wheel_base', 0,215)
-    self.declare_parameter('ticks_per_revolution_l', 2006)
-    self.declare_parameter('ticks_per_revolution_r', 1992)
-    
-    # Hae parametrien arvot
-    self.wheel_radius = self.get_parameter('wheel_radius').value
-    self.wheel_base = self.get_parameter('wheel_base').value
-    self.ticks_per_revolution_l = self.get_parameter('ticks_per_revolution_l').value
-    self.ticks_per_revolution_r = self.get_parameter('ticks_per_revolution_r').value
+        # Khai báo tham số (Sửa lỗi dấu phẩy ở wheel_base: 0,215 -> 0.215)
+        self.declare_parameter('wheel_radius', 0.0335)
+        self.declare_parameter('wheel_base', 0.215)
+        self.declare_parameter('ticks_per_revolution_l', 2006)
+        self.declare_parameter('ticks_per_revolution_r', 1992)
+        
+        self.wheel_radius = self.get_parameter('wheel_radius').value
+        self.wheel_base = self.get_parameter('wheel_base').value
+        self.ticks_per_revolution_l = self.get_parameter('ticks_per_revolution_l').value
+        self.ticks_per_revolution_r = self.get_parameter('ticks_per_revolution_r').value
 
-    self.get_logger().info(f'Wheel radius: {self.wheel_radius}')
-    self.get_logger().info(f'Wheel distance: {self.wheel_base}')
-    self.get_logger().info(f'Sensor revolution: {self.ticks_per_revolution}')
+        self.left_encoder = Encoder(self.wheel_radius, self.ticks_per_revolution_l)
+        self.right_encoder = Encoder(self.wheel_radius, self.ticks_per_revolution_r)
 
-    self.left_encoder = Encoder(self.wheel_radius, self.ticks_per_revolution_l)
-    self.right_encoder = Encoder(self.wheel_radius, self.ticks_per_revolution_r)
+        self.odom_x = 0.0
+        self.odom_y = 0.0
+        self.odom_theta = 0.0
+        
+        # Biến để xử lý mốc 0 ban đầu cho IMU
+        self.initial_yaw = None
+        self.current_corrected_yaw = 0.0
+        
+        self.imu_data = Imu()
+        self.imu_data.orientation.w = 1.0 
 
-    self.odom_theta = 0.0
-    self.odom_x = 0.0
-    self.odom_y = 0.0
-    
-    self.imu_data = Imu()
-    self.imu_data.orientation.w = 1.0 
+        self.motor_subscriber = self.create_subscription(MotordriverMessage, 'motor_data', self.update_encoders_callback, 10)
+        self.imu_subscriber = self.create_subscription(Imu, 'imu/data', self.imu_callback, 10)
+        self.odom_publisher = self.create_publisher(Odometry, 'wheel/odom_imu', 10)
+        self.tf_broadcaster = TransformBroadcaster(self)
 
-    self.motor_subscriber = self.create_subscription(
-        MotordriverMessage,
-        'motor_data',
-        self.update_encoders_callback,
-        10
-    )
+        self.prev_time = self.get_clock().now()
+        self.create_timer(0.02, self.timer_callback) # Tăng tần suất lên 50Hz để mượt hơn
+        self.update = False
 
-    self.imu_subscriber = self.create_subscription(
-        Imu,
-        'imu/data', 
-        self.imu_callback,
-        10
-    )
+    def update_encoders_callback(self, message):
+        self.left_encoder.update(message.encoder1)
+        self.right_encoder.update(-message.encoder2)
+        self.update = True
 
-    self.odom_publisher = self.create_publisher(
-        Odometry,
-        'odom_imu', 
-        10
-    )
+    def imu_callback(self, msg: Imu):
+        quat = [msg.orientation.x, msg.orientation.y, msg.orientation.z, msg.orientation.w]
+        _, _, raw_yaw = euler_from_quaternion(quat)
+        
+        if self.initial_yaw is None:
+            self.initial_yaw = raw_yaw
+            self.get_logger().info(f'Set Initial Yaw: {math.degrees(self.initial_yaw):.2f} deg')
+        
+        self.current_corrected_yaw = raw_yaw - self.initial_yaw
+        self.imu_data = msg
+        self.update = True
 
-    self.tf_broadcaster = TransformBroadcaster(self)
+    def timer_callback(self):    
+        if not self.update or self.initial_yaw is None: return
+        self.update = False
+        
+        current_time = self.get_clock().now()
+        dt = (current_time - self.prev_time).nanoseconds / 1e9
+        self.prev_time = current_time
 
-    self.prev_time = self.get_clock().now().nanoseconds
+        d_left = self.left_encoder.deltam()
+        d_right = self.right_encoder.deltam()
+        delta_distance = (d_left + d_right) / 2.0
 
-    timer_period = 0.1
-    self.timer = self.create_timer(timer_period, self.timer_callback)
-    self.update = True
+        new_theta = self.current_corrected_yaw
 
-  def update_encoders_callback(self, message):
-    self.left_encoder.update(message.encoder1)
-    self.right_encoder.update(-message.encoder2)
-    self.update = True
+        # Tích phân Runge-Kutta 2 (Dùng trung bình góc cũ và mới)
+        avg_theta = self.odom_theta + (new_theta - self.odom_theta) / 2.0
+        
+        if delta_distance != 0:
+            self.odom_x += delta_distance * math.cos(avg_theta)
+            self.odom_y += delta_distance * math.sin(avg_theta)
+        
+        self.odom_theta = new_theta
 
-  def imu_callback(self, msg: Imu):
-    self.imu_data = msg
-    self.update = True
+        linear_x = delta_distance / dt 
+        linear_y = 0.0
+        angular_z = self.imu_data.angular_velocity.z
 
-  def timer_callback(self):    
-    if not self.update: return
-    self.update = False
-    current_time = self.get_clock().now().nanoseconds
-    elapsed = (current_time - self.prev_time) / 1000000000
-    self.prev_time = current_time
+        self.publish_data(current_time, linear_x, linear_y, angular_z)
 
-    d_left= self.left_encoder.deltam()
-    d_right = self.right_encoder.deltam()
+    def publish_data(self, time, vx, vy, vth):
+        now = time.to_msg()
+        q = quaternion_from_euler(0.0, 0.0, self.odom_theta)
 
-    delta_distance = (d_left + d_right) / 2.0
-    # delta_theta = (d_right - d_left) / self.wheel_base
+        # Odometry
+        odom_msg = Odometry()
+        odom_msg.header.stamp = now
+        odom_msg.header.frame_id = 'odom'
+        odom_msg.child_frame_id = 'base_footprint'
+        odom_msg.pose.pose.position.x = self.odom_x
+        odom_msg.pose.pose.position.y = self.odom_y
+        odom_msg.pose.pose.orientation = q
+        
+        odom_msg.twist.twist.linear.x = vx
+        odom_msg.twist.twist.linear.y = vy
+        odom_msg.twist.twist.angular.z = vth
+        self.odom_publisher.publish(odom_msg)
 
-    #Quaternion from IMU
-    quat = self.imu_data.orientation
-    
-    (roll, pitch, imu_yaw) = euler_from_quaternion([quat.x, quat.y, quat.z, quat.w])
-
-    # delta_theta = imu_yaw - self.odom_theta 
-    
-    self.odom_theta = imu_yaw 
-
-    # https://automaticaddison.com/calculating-wheel-odometry-for-a-differential-drive-robot/ 
-    if delta_distance != 0:
-      delta_x = math.cos( self.odom_theta ) * delta_distance
-      delta_y = math.sin( self.odom_theta ) * delta_distance 
-
-      self.odom_x += delta_x
-      self.odom_y += delta_y
-
-    linear_x = delta_distance / elapsed 
-    linear_y = 0.0 
-    angular_z = self.imu_data.angular_velocity.z
-
-    odom_msg = Odometry()
-    odom_msg.header.stamp = self.get_clock().now().to_msg()
-    odom_msg.header.frame_id = 'odom'
-    odom_msg.child_frame_id = 'base_footprint'
-
-    odom_msg.pose.pose.position.x = self.odom_x 
-    odom_msg.pose.pose.position.y = self.odom_y 
-    odom_msg.pose.pose.position.z = 0.0
-    
-    #Orientation 
-    q = quaternion_from_euler(0.0, 0.0, self.odom_theta)
-    odom_msg.pose.pose.orientation.x = q[0]
-    odom_msg.pose.pose.orientation.y = q[1]
-    odom_msg.pose.pose.orientation.z = q[2]
-    odom_msg.pose.pose.orientation.w = q[3]
-
-    #Velocity
-    odom_msg.twist.twist.linear.x = linear_x
-    odom_msg.twist.twist.linear.y = linear_y
-    odom_msg.twist.twist.angular.z = angular_z
-
-    self.odom_publisher.publish(odom_msg) 
-
-    t = TransformStamped()
-    t.header.stamp = self.get_clock().now().to_msg()
-    t.header.frame_id = 'odom'
-    t.child_frame_id = 'base_footprint' #projection to ground of base_link
-
-    t.transform.translation.x = self.odom_x 
-    t.transform.translation.y = self.odom_y 
-    t.transform.translation.z = 0.0
-
-    t.transform.rotation.x = q[0]
-    t.transform.rotation.y = q[1]
-    t.transform.rotation.z = q[2]
-    t.transform.rotation.w = q[3]
-    self.tf_broadcaster.sendTransform(t) 
-
+        # TF
+        t = TransformStamped()
+        t.header.stamp = now
+        t.header.frame_id = 'odom'
+        t.child_frame_id = 'base_footprint'
+        t.transform.translation.x = self.odom_x
+        t.transform.translation.y = self.odom_y
+        t.transform.rotation.x, t.transform.rotation.y, \
+        t.transform.rotation.z, t.transform.rotation.w = q
+        self.tf_broadcaster.sendTransform(t)
 
 def main(args=None):
-  rclpy.init(args=args)
-
-  odom_node = OdomImuNode()
-
-  try:
-    rclpy.spin(odom_node)
-  except KeyboardInterrupt:
-    pass
-  finally:
-    odom_node.destroy_node()
-    if rclpy.ok():
-      rclpy.shutdown()
+    rclpy.init(args=args)
+    node = OdomImuNode()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
 
 if __name__ == '__main__':
-  main()
+    main()

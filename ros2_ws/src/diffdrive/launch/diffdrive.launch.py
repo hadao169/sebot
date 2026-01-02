@@ -15,7 +15,7 @@ def generate_launch_description():
 
     colcon_prefix_path = os.getenv('COLCON_PREFIX_PATH').split("/install")[0]
 
-    urdf_file_name = 'robot.urdf'
+    urdf_file_name = 'robot.urdf.xacro'
     urdf = os.path.join(
         colcon_prefix_path,
         'config',

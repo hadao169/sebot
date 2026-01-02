@@ -60,6 +60,8 @@ bool Odometry::update(double left_pos, double right_pos, const rclcpp::Time & ti
   const double left_wheel_cur_pos = left_pos * left_wheel_radius_;
   const double right_wheel_cur_pos = right_pos * right_wheel_radius_;
 
+  
+
   // Estimate velocity of wheels using old and current position:
   const double left_wheel_est_vel = left_wheel_cur_pos - left_wheel_old_pos_;
   const double right_wheel_est_vel = right_wheel_cur_pos - right_wheel_old_pos_;

@@ -35,7 +35,6 @@ setup(
         'console_scripts': [
             'uwb_tracking_dwm1001 = uwb_tracking_ros2.uwb_tracking_dwm1001:main',
             'viz_dwm1001 = uwb_tracking_ros2.viz_dwm1001:main',
-            'ls_plotter = uwb_tracking_ros2.plot_position:main',
         ],
     },
 )

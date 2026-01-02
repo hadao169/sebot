@@ -1,18 +1,17 @@
 import rclpy
 import time
 import serial
-import os
 import numpy as np
 
 from rclpy.node import Node
 from .dwm1001_apiCommands import DWM1001_API_COMMANDS
-from geometry_msgs.msg import PoseStamped
-from .KalmanFilter import KalmanFilter as kf
-from .Helpers import initConstVelocityKF, get_tag_publisher, update_multitags_list, create_pose_stamped
+# from geometry_msgs.msg import PoseStamped
+# from .KalmanFilter import KalmanFilter as kf
+from .Helpers import get_tag_publisher, update_multitags_list, create_pose_stamped, CsvLogger
 from .LeastSquare import LeastSquare as ls
 from citrack_ros_msgs.msg import CustomTag
 from citrack_ros_msgs.msg import MultiTags
-import traceback
+# import traceback
 
 
 class dwm1001_localizer(Node):
@@ -24,6 +23,7 @@ class dwm1001_localizer(Node):
         self.topics_kf = {}
         self.kalman_list = {}
         self.topics_ls = {}
+        self.logger = CsvLogger()
 
         self.multipleTags = MultiTags()
         self.pub_tags = self.create_publisher(
@@ -105,7 +105,7 @@ class dwm1001_localizer(Node):
 
         except Exception:
             pass
-
+            
     def initializeDWM1001API(self):
         self.serialPortDWM1001.write(DWM1001_API_COMMANDS.RESET)
         self.serialPortDWM1001.write(DWM1001_API_COMMANDS.SINGLE_ENTER)
@@ -147,29 +147,21 @@ class dwm1001_localizer(Node):
                     self.publishTagPoseLS(self.tag_id, self.tag_macID, serialReadLine)
             if pose_data:
                 self.publishTagPositions(pose_data)
-                # else:
-                    # self.publishTagPoseKF(self.tag_id,self.tag_macID, pose_data)
         except Exception:
             pass
 
-    # Try-catch block for debugging
     def publishTagPoseLS(self, tag_id: int, tag_macID: str, serialReadLine):
-        try:
-            serialReadLine_str = serialReadLine.decode('UTF-8', errors='ignore')
-            raw_uwb_data = serialReadLine_str.strip().split()
-        except Exception as e:
-            self.get_logger().error(f"[LS-ERROR] Decode/Split Failed: {e}")
-            return
+        serialReadLine_str = serialReadLine.decode('UTF-8', errors='ignore')
+        raw_uwb_data = serialReadLine_str.strip().split() # ['A1[...]=...', 'A2[...]=...', ...]
+        self.logger.log_raw(raw_uwb_data)
+        # self.get_logger().info(f"[LS-RAW] {raw_uwb_data}")
 
         if tag_macID not in self.topics_ls:
-            self.get_logger().info(f"[LS] Creating LS object for {tag_macID}")
             self.topics_ls[tag_macID] = ls()
 
         ls_object = self.topics_ls[tag_macID]
 
         ls_object.process_uwb_data(raw_uwb_data)
- 
-        self.get_logger().info(f"original_position = {ls_object.original_position}")
 
         # if not ls_object.measurements:
         #     self.get_logger().warn("[LS] No measurements → SKIP LS")
@@ -179,33 +171,18 @@ class dwm1001_localizer(Node):
         #     self.get_logger().warn("[LS] No original position → SKIP LS")
         #     return
 
-        try:
-            estimated_x, estimated_y = ls_object.estimate_position(
-                max_iterations=self.least_square_max_iterations,
-                tolerance=self.least_square_tolerance
-            )
-            # self.get_logger().info(f"[LS] Estimated: x={estimated_x}, y={estimated_y}")
-        except Exception as e:
-            self.get_logger().error(f"[LS] estimate_position ERROR: {e}")
-            return
+        estimated_x, estimated_y = ls_object.estimate_position(
+                max_iterations=self.least_square_max_iterations, tolerance=self.least_square_tolerance)
+
+        self.get_logger().info(f"[LS] Estimated: x={estimated_x}, y={estimated_y}")
+
 
         xyz = [estimated_x, estimated_y, 0.0]
         ps = create_pose_stamped(self, xyz, tag_macID)
         clean_id_str = tag_macID.replace(':', '_')
 
-        pub = get_tag_publisher(
-            self,
-            self.topics_ls,
-            clean_id_str,
-            suffix="pose_ls"
-        )
+        pub = get_tag_publisher(self, self.topics_ls, clean_id_str, suffix="pose_ls")
 
-        if pub is None:
-            self.get_logger().error("[LS] get_tag_publisher returned NONE!")
-            return
-
-        self.get_logger().info("[LS] Publishing PoseStamped...")
-        
         pub.publish(ps)
 
         tag = CustomTag()
@@ -214,16 +191,16 @@ class dwm1001_localizer(Node):
         tag.orientation_w = ps.pose.orientation.w
 
         if not hasattr(self, "multipleTags_ls"):
+            self.get_logger().info("[LS] Creating new MultiTags_ls")
             self.multipleTags_ls = MultiTags()
 
         update_multitags_list(self.multipleTags_ls, tag, tag_macID)
 
         if not hasattr(self, "pub_tags_ls"):
+            self.get_logger().info("[LS] Creating publisher /multiTags_ls")
             self.pub_tags_ls = self.create_publisher(MultiTags, "/dwm1001/multiTags_ls", 100)
 
         self.pub_tags_ls.publish(self.multipleTags_ls)
-        self.get_logger().info("[LS] Published MultiTags_ls")
-
 
     def publishTagPositions(self, pose_data: list):
         """Publish raw pose data (Non-KF) to ROS."""
@@ -254,48 +231,28 @@ class dwm1001_localizer(Node):
 
         self.pub_tags.publish(self.multipleTags)
 
-    # def publishTagPoseKF(self, tag_macID: str, t_pose_list: list):
-    #     if np.isnan(t_pose_list).any():
-    #         return
 
-    #     t_pose_measurement = np.array(t_pose_list[:3])
-    #     t_pose_measurement.shape = (len(t_pose_measurement), 1)
+def main(args=None):
+    rclpy.init(args=args)
+    dwm1001 = dwm1001_localizer()
+    try:
+        dwm1001.initialize_hardware()
+        rclpy.spin(dwm1001)
+    except KeyboardInterrupt:
+        pass
+    except IOError:
+        pass
+    finally:
+        dwm1001.shutdown_hardware()
+        dwm1001.destroy_node()
+        rclpy.shutdown()
 
-    #     if tag_macID not in self.kalman_list:
-    #         A = np.zeros((9, 9))
-    #         H = np.zeros((3, 9))
-    #         self.kalman_list[tag_macID] = kf(A, H, tag_macID)
 
-    #     kf_object = self.kalman_list[tag_macID]
+if __name__ == '__main__':
+    main()
 
-    #     if kf_object.isKalmanInitialized == False:
-    #         A, B, H, Q, R, P_0, x_0 = initConstVelocityKF()
-    #         kf_object.assignSystemParameters(A, B, H, Q, R, P_0, x_0)
-    #         kf_object.isKalmanInitialized = True
 
-    #     kf_object.performKalmanFilter(t_pose_measurement, 0)
-    #     xyz_kf = [
-    #         kf_object.x_m[0],
-    #         kf_object.x_m[1],
-    #         kf_object.x_m[2]
-    #     ]
-
-    #     clean_id_str = tag_macID.replace(':', '_')
-    #     ps = create_pose_stamped(self, xyz_kf, tag_macID)
-    #     pub = get_tag_publisher(self, self.topics_kf,
-    #                             clean_id_str, suffix="pose_kf")
-    #     pub.publish(ps)
-
-    #     tag_kf = CustomTag()
-    #     tag_kf.header = ps.header
-    #     tag_kf.pose_x, tag_kf.pose_y, tag_kf.pose_z = xyz_kf
-    #     tag_kf.orientation_w = ps.pose.orientation.w
-
-    #     update_multitags_list(self.multipleTags_kf, tag_kf, tag_macID)
-
-    #     self.pub_tags_kf.publish(self.multipleTags_kf)
-
-    # def publishTagPoseKF(self, tag_id: int, tag_macID: str, t_pose_list: list):
+# def publishTagPoseKF(self, tag_id: int, tag_macID: str, t_pose_list: list):
     #     """Publish Kalman filtered pose data to ROS."""
 
     #     # Validate input
@@ -371,23 +328,3 @@ class dwm1001_localizer(Node):
     #             self.multipleTags_kf.tags_list[current_idx[0]] = tag_kf
 
     #     self.pub_tags_kf.publish(self.multipleTags_kf)
-
-
-def main(args=None):
-    rclpy.init(args=args)
-    dwm1001 = dwm1001_localizer()
-    try:
-        dwm1001.initialize_hardware()
-        rclpy.spin(dwm1001)
-    except KeyboardInterrupt:
-        pass
-    except IOError:
-        pass
-    finally:
-        dwm1001.shutdown_hardware()
-        dwm1001.destroy_node()
-        rclpy.shutdown()
-
-
-if __name__ == '__main__':
-    main()
