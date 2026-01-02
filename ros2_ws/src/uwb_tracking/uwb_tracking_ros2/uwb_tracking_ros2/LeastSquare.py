@@ -92,3 +92,5 @@ class LeastSquare():
         error_magnitude = math.sqrt(error_x**2 + error_y**2)
         return error_magnitude
     
+
+    

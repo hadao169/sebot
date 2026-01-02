@@ -2,28 +2,26 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration, Command
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.actions import IncludeLaunchDescription
 
 def generate_launch_description():
-    # NAMESPACE = 'SeBotxx' # korvaa xx oman Sebotin tunnisteella, esimerkiksi IP-osoitteen viimeisellä tavulla.
-    # FRAME_PREFIX = NAMESPACE+"_" # luodaan robot_state_publisherin tukeman frame_prefix-parametrin arvo
-
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')
 
     colcon_prefix_path = os.getenv('COLCON_PREFIX_PATH').split("/install")[0]
 
-    urdf_file_name = 'robot.urdf.xacro'
+    urdf_file_name = 'robot.urdf'
     urdf = os.path.join(
         colcon_prefix_path,
         'config',
         urdf_file_name)
-    # with open(urdf, 'r') as infp:
-    #     robot_desc = infp.read()
-    robot_desc = Command(['xacro ', urdf])
+    with open(urdf, 'r') as infp:
+        robot_desc = infp.read()
     print(urdf)
+    if not robot_desc.strip():
+        raise RuntimeError("robot_description is empty! Check your URDF file.")
 
     xsens_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -44,6 +42,16 @@ def generate_launch_description():
             )
         )
     )
+    
+    uwb_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory('uwb_tracking_ros2'),
+                'launch',
+                'uwb_tracking_dwm1001.launch.py'
+            )
+        )
+    )
 
     return LaunchDescription([
         DeclareLaunchArgument(
@@ -56,10 +64,7 @@ def generate_launch_description():
             executable='robot_state_publisher',
             name='robot_state_publisher',
             output='screen',
-            #namespace = NAMESPACE,
-            #parameters=[{'use_sim_time': use_sim_time, 'robot_description': robot_desc, 'frame_prefix': FRAME_PREFIX}],
             parameters=[{'use_sim_time': use_sim_time, 'robot_description': robot_desc}],
-            #arguments=[urdf] # 26.5.2025 tämä on tarpeeton rivi, sillä robot_state_publisher ei parsi komentokehotteen argumentteja.
         ),
 
         # Node(
@@ -109,6 +114,18 @@ def generate_launch_description():
               'config',
               'params.yaml')]
         ),
+
+        # Node(
+        #     package='diffdrive',
+        #     executable='odom_imu',
+        #     name='odom_imu_node',
+        #     #namespace = NAMESPACE,
+        #     output='screen',
+        #     parameters=[os.path.join(
+        #       colcon_prefix_path,
+        #       'config',
+        #       'params.yaml')]
+        # ),
         
         Node(
             package='diffdrive',
@@ -121,5 +138,8 @@ def generate_launch_description():
               'config',
               'params.yaml')]
         ),
+        xsens_launch,
+        uwb_launch,
+        ekf_launch
     ])
 
