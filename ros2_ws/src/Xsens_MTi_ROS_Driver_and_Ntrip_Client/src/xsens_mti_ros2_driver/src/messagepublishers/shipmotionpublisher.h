@@ -1,5 +1,4 @@
-
-//  Copyright (c) 2003-2023 Movella Technologies B.V. or subsidiaries worldwide.
+//  Copyright (c) 2003-2025 Movella Technologies B.V. or subsidiaries worldwide.
 //  All rights reserved.
 //  
 //  Redistribution and use in source and binary forms, with or without modification,
@@ -28,49 +27,43 @@
 //  SHALL BE EXCLUSIVELY APPLICABLE AND ANY DISPUTES SHALL BE FINALLY SETTLED UNDER THE RULES 
 //  OF ARBITRATION OF THE INTERNATIONAL CHAMBER OF COMMERCE IN THE HAGUE BY ONE OR MORE 
 //  ARBITRATORS APPOINTED IN ACCORDANCE WITH SAID RULES.
+//  
 
 
-#ifndef XDACALLBACK_H
-#define XDACALLBACK_H
+#ifndef SHIPMOTIONPUBLISHER_H
+#define SHIPMOTIONPUBLISHER_H
 
-#include <rclcpp/rclcpp.hpp>
-#include <xscontroller/xscallback.h>
-#include <mutex>
-#include <condition_variable>
-#include <list>
-#include "xsens_time_handler.h"
-#include "high_rate_interpolator.h"
+#include "packetcallback.h"
+#include <xsens_mti_ros2_driver/msg/ship_motion.hpp>
 
-struct XsDataPacket;
-struct XsDevice;
-
-typedef std::pair<rclcpp::Time, XsDataPacket> RosXsDataPacket;
-
-class XdaCallback : public XsCallback
+struct ShipMotionPublisher : public PacketCallback
 {
-public:
-	XdaCallback(rclcpp::Node::SharedPtr node, size_t maxBufferSize = 5);
-	virtual ~XdaCallback() throw();
-
-	RosXsDataPacket next(const std::chrono::milliseconds &timeout);
-
-protected:
-	void onLiveDataAvailable(XsDevice *, const XsDataPacket *packet) override;
-	void onError(XsDevice *, XsResultValue error) override;
-
-private:
-	void checkHighRateParameters();
-	void handleInterpolation(const XsDataPacket *packet, std::unique_lock<std::mutex> &lock);
-	
-	std::mutex m_mutex;
-	std::condition_variable m_condition;
-	std::list<RosXsDataPacket> m_buffer;
-	size_t m_maxBufferSize;
-	rclcpp::Node::SharedPtr parent_node;
-
-	XsensTimeHandler m_timeHandler;
-	HighRateInterpolator m_interpolator;
-	bool m_interpolationEnabled;
+    rclcpp::Publisher<xsens_mti_ros2_driver::msg::ShipMotion>::SharedPtr pub;
+    std::string frame_id = DEFAULT_FRAME_ID;
+    
+    ShipMotionPublisher(rclcpp::Node::SharedPtr node)
+    {
+        int pub_queue_size = 5;
+        node->get_parameter("publisher_queue_size", pub_queue_size);
+        pub = node->create_publisher<xsens_mti_ros2_driver::msg::ShipMotion>("/filter/ship_motion", pub_queue_size);
+        node->get_parameter("frame_id", frame_id);
+    }
+    
+    void operator()(const XsDataPacket &packet, rclcpp::Time timestamp)
+    {
+        // Only publish when both heave position and heave period are available
+        if (packet.containsHeavePosition() && packet.containsHeavePeriod())
+        {
+            xsens_mti_ros2_driver::msg::ShipMotion msg;
+            msg.header.stamp = timestamp;
+            msg.header.frame_id = frame_id;
+            
+            // Publishing heave position in meters and heave period in seconds
+            msg.heave_position = packet.heavePosition();
+            msg.heave_period = packet.heavePeriod();
+            
+            pub->publish(msg);
+        }
+    }
 };
-
 #endif

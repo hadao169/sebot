@@ -4,5 +4,20 @@
         "vector": "cpp",
         "string": "cpp"
     },
-    "github.copilot.chat.codeGeneration.useInstructionFiles": true
+    "github.copilot.chat.codeGeneration.useInstructionFiles": true,
+    "ROS2.distro": "jazzy",
+    "python.autoComplete.extraPaths": [
+        "/home/hadao169/sebot/build/motordriver",
+        "/home/hadao169/sebot/install/motordriver/lib/python3.12/site-packages",
+        "/home/hadao169/sebot/build/diffdrive",
+        "/home/hadao169/sebot/install/diffdrive/lib/python3.12/site-packages",
+        "/opt/ros/jazzy/lib/python3.12/site-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/hadao169/sebot/build/motordriver",
+        "/home/hadao169/sebot/install/motordriver/lib/python3.12/site-packages",
+        "/home/hadao169/sebot/build/diffdrive",
+        "/home/hadao169/sebot/install/diffdrive/lib/python3.12/site-packages",
+        "/opt/ros/jazzy/lib/python3.12/site-packages"
+    ]
 }

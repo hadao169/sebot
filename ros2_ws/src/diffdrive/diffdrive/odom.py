@@ -24,7 +24,6 @@ class OdomNode(Node):
         self.declare_parameter('ticks_per_revolution_l', 2006)
         self.declare_parameter('ticks_per_revolution_r', 1992)
         
-        # Hae parametrien arvot
         self.wheel_radius = self.get_parameter('wheel_radius').value
         self.wheel_base = self.get_parameter('wheel_base').value
         self.ticks_per_revolution_l = self.get_parameter('ticks_per_revolution_l').value
@@ -35,18 +34,16 @@ class OdomNode(Node):
         self.get_logger().info(f'Left sensor revolution: {self.ticks_per_revolution_l}')
         self.get_logger().info(f'Right sensor revolution: {self.ticks_per_revolution_r}')
 
-        # Khởi tạo encoder
         self.left_encoder = Encoder(self.wheel_radius, 2000)
         self.right_encoder = Encoder(self.wheel_radius, 2000)
 
-        # Biến odometry
         self.odom_theta = 0.0
         self.odom_x = 0.0
         self.odom_y = 0.0
         self.total_dis = 0
 
-        self.encoder1 = None
-        self.encoder2 = None
+        self.encoder1 = 0
+        self.encoder2 = 0
 
         self.motor_subscriber = self.create_subscription(
             MotordriverMessage,
@@ -65,11 +62,9 @@ class OdomNode(Node):
         self.prev_time = self.get_clock().now().nanoseconds
         self.update = True
 
-        # Timer
         timer_period = 0.01
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
-        # === LOG FILE ===
         self.log_filename = None
         try:
             timestamp = time.strftime("%Y%m%d_%H%M%S")
@@ -102,25 +97,23 @@ class OdomNode(Node):
         elapsed = (current_time - self.prev_time) / 1e9
         self.prev_time = current_time
 
-        # Tính quãng đường từ encoder
         d_left = self.left_encoder.deltam()
         d_right = self.right_encoder.deltam()
         delta_distance = (d_left + d_right) / 2.0
         self.total_dis += delta_distance
         delta_theta = (d_right - d_left) / self.wheel_base
 
-        # Cập nhật odom x/y/theta
+        # Update odom_x, odom_y
         if delta_distance != 0 or delta_theta != 0:
             self.odom_x += delta_distance * math.cos(self.odom_theta + delta_theta / 2.0)
             self.odom_y += delta_distance * math.sin(self.odom_theta + delta_theta / 2.0)
             self.odom_theta += delta_theta
 
-        # Tốc độ
+        # Velocities
         linear_x = delta_distance / elapsed
         linear_y = 0.0
         angular_z = delta_theta / elapsed
 
-        # === PUBLISH ODOMETRY ===
         odom_msg = Odometry()
         odom_msg.header.stamp = self.get_clock().now().to_msg()
         odom_msg.header.frame_id = 'odom'
@@ -142,7 +135,6 @@ class OdomNode(Node):
 
         self.odom_publisher.publish(odom_msg)
 
-        # === BROADCAST TF ===
         t = TransformStamped()
         t.header.stamp = self.get_clock().now().to_msg()
         t.header.frame_id = 'odom'
@@ -159,7 +151,6 @@ class OdomNode(Node):
 
         # self.tf_broadcaster.sendTransform(t)
 
-        # === GHI LOG CSV ===
         if self.log_filename:
             try:
                 current_time_sec = current_time / 1e9
@@ -184,7 +175,6 @@ class OdomNode(Node):
 def main(args=None):
     rclpy.init(args=args)
     odom_node = OdomNode()
-
     try:
         rclpy.spin(odom_node)
     except KeyboardInterrupt:

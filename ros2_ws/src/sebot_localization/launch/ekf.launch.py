@@ -39,4 +39,12 @@ def generate_launch_description():
                 {'use_sim_time': use_sim_time_lc}
             ]
         ),
+
+        Node(
+            package='sebot_localization',
+            executable='ekf_node',
+            name='ekf_node',
+            output='screen',
+            parameters=[{'use_sim_time': use_sim_time_lc}]
+        )
     ])
