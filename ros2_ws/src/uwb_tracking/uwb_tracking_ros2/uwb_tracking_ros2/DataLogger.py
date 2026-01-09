@@ -7,8 +7,6 @@ import csv
 from datetime import datetime
 import numpy as np
 
-
-
 class DataLoggerNode(Node):
     def __init__(self):
         super().__init__('data_logger_node')
@@ -20,8 +18,8 @@ class DataLoggerNode(Node):
         self.uwb_x, self.uwb_y = 0.0, 0.0
         
         self.theta = 0
-        self.Tx = 0.36
-        self.Ty = 1.42
+        self.Tx = 1.36
+        self.Ty = 2.0
                
         time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.filename = f'pos_data_{time_str}.csv'

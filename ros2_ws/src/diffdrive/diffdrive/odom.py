@@ -65,21 +65,21 @@ class OdomNode(Node):
         timer_period = 0.01
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
-        self.log_filename = None
-        try:
-            timestamp = time.strftime("%Y%m%d_%H%M%S")
-            self.log_filename = f'odom_log_{timestamp}.csv'
-            with open(self.log_filename, 'w', newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow([
-                    'timestamp', 'encoder_L', 'encoder_R', 
-                    'd_left', 'd_right', 'delta_distance', 'total_distance',
-                    'odom_x', 'odom_y', 'odom_theta'
-                ])
-            self.get_logger().info(f"Logging odometry data to {self.log_filename}")
-        except Exception as e:
-            self.get_logger().error(f"Failed to initialize CSV file: {e}")
-            self.log_filename = None
+        # self.log_filename = None
+        # try:
+        #     timestamp = time.strftime("%Y%m%d_%H%M%S")
+        #     self.log_filename = f'odom_log_{timestamp}.csv'
+        #     with open(self.log_filename, 'w', newline='') as f:
+        #         writer = csv.writer(f)
+        #         writer.writerow([
+        #             'timestamp', 'encoder_L', 'encoder_R', 
+        #             'd_left', 'd_right', 'delta_distance', 'total_distance',
+        #             'odom_x', 'odom_y', 'odom_theta'
+        #         ])
+        #     self.get_logger().info(f"Logging odometry data to {self.log_filename}")
+        # except Exception as e:
+        #     self.get_logger().error(f"Failed to initialize CSV file: {e}")
+        #     self.log_filename = None
 
     def update_encoders_callback(self, message):
         self.left_encoder.update(message.encoder1)
@@ -151,25 +151,25 @@ class OdomNode(Node):
 
         # self.tf_broadcaster.sendTransform(t)
 
-        if self.log_filename:
-            try:
-                current_time_sec = current_time / 1e9
-                with open(self.log_filename, 'a', newline='') as f:
-                    writer = csv.writer(f)
-                    writer.writerow([
-                        current_time_sec,
-                        -self.encoder1,
-                        -self.encoder2,
-                        d_left,
-                        d_right,
-                        delta_distance,
-                        self.total_dis,
-                        self.odom_x,
-                        self.odom_y,
-                        self.odom_theta
-                    ])
-            except Exception as e:
-                pass
+        # if self.log_filename:
+        #     try:
+        #         current_time_sec = current_time / 1e9
+        #         with open(self.log_filename, 'a', newline='') as f:
+        #             writer = csv.writer(f)
+        #             writer.writerow([
+        #                 current_time_sec,
+        #                 -self.encoder1,
+        #                 -self.encoder2,
+        #                 d_left,
+        #                 d_right,
+        #                 delta_distance,
+        #                 self.total_dis,
+        #                 self.odom_x,
+        #                 self.odom_y,
+        #                 self.odom_theta
+        #             ])
+        #     except Exception as e:
+        #         pass
 
 
 def main(args=None):
@@ -183,7 +183,6 @@ def main(args=None):
         odom_node.destroy_node()
         if rclpy.ok():
             rclpy.shutdown()
-
 
 if __name__ == '__main__':
     main()

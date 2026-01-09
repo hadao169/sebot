@@ -1,0 +1,3 @@
+- outlier rejection cho uwb (Mahalanobis)
+- timestampe giong nhau (rosbag + plotjuggler)
+- 

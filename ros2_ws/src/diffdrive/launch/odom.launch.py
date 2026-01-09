@@ -38,7 +38,7 @@ def generate_launch_description():
             os.path.join(
                 get_package_share_directory('sebot_localization'),
                 'launch',
-                'ekf.launch.py'
+                'ekf_dual.launch.py'
             )
         )
     )
@@ -125,7 +125,7 @@ def generate_launch_description():
         #       colcon_prefix_path,
         #       'config',
         #       'params.yaml')]
-        # ),
+        # )                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
         
         Node(
             package='diffdrive',

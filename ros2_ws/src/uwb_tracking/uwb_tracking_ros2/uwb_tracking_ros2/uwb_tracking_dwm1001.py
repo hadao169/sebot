@@ -153,7 +153,7 @@ class dwm1001_localizer(Node):
     def publishTagPoseLS(self, tag_id: int, tag_macID: str, serialReadLine):
         serialReadLine_str = serialReadLine.decode('UTF-8', errors='ignore')
         raw_uwb_data = serialReadLine_str.strip().split() # ['A1[...]=...', 'A2[...]=...', ...]
-        self.logger.log_raw(raw_uwb_data)
+        # self.logger.log_raw(raw_uwb_data)
         # self.get_logger().info(f"[LS-RAW] {raw_uwb_data}")
 
         if tag_macID not in self.topics_ls:

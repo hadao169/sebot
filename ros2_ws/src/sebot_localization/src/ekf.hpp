@@ -26,24 +26,32 @@ public:
     // y_k = y_k-1 + v_k * dt * math.sin(phi_k-1 + omega_k * dt / 2)
     // wz_k = wz_k-1 (Constant velocity model for angular velocity)
     
-    ExtendedKalmanFilter(double x0 = 0, double y0 = 0, double theta0 = 0, double wz0 = 0, double dt_in = 0.1) {
+    ExtendedKalmanFilter(double x0 = 0, double y0 = 0, double theta0 = 0, double wz0 = 0, double dt = 0.1) {
         // State vector [x, y, theta, wz]
         x << x0, y0, theta0, wz0;
         
-        dt = dt_in;
+        this->dt = dt;
 
         // Initial state covariance matrix (P0)
-        P = Eigen::Matrix4d::Identity() * 1e-9; 
-
+        P = Eigen::Matrix4d::Zero();
+        P(0, 0) = 1.0;      
+        P(1, 1) = 1.0;      
+        P(2, 2) = 0.1;    
+        P(3, 3) = 0.1;    
+        
         // Process noise covariance (Qk)
-        Qk = Eigen::Matrix4d::Identity() * 0.01; 
+        Qk = Eigen::Matrix4d::Zero();
+        Qk(0, 0) = 0.001;
+        Qk(1, 1) = 0.001;
+        Qk(2, 2) = 0.001;
+        Qk(3, 3) = 0.005;
 
-        // Measurement noise covariance (Rk) - Extended to 4x4
+        // Measurement noise covariance (Rk) - 
         R_config = Eigen::MatrixXd::Zero(4, 4);
-        R_config << 0.01, 0,    0,      0,
-                    0,    0.01, 0,      0,
+        R_config << 0.1, 0,    0,      0,
+                    0,    0.1, 0,      0,
                     0,    0,    0.0003, 0,
-                    0,    0,    0,      0.001; 
+                    0,    0,    0,      0.01; 
 
         // Identity matrix
         I = Eigen::Matrix4d::Identity();
@@ -51,24 +59,22 @@ public:
 
     void predict(double v, double omega) {
         double theta = x(2);
-
+        double wz_current = x(3);
         // State prediction using Runge-Kutta 2nd Order
-        // Sử dụng wz từ state thay vì omega từ command để tăng độ mượt
         x(0) += v * dt * std::cos(theta + omega * dt / 2.0);
         x(1) += v * dt * std::sin(theta + omega * dt / 2.0);
         x(2) += omega * dt;
-        x(3) = omega; // Constant velocity model
 
         x(2) = normalize_angle(x(2));
 
         // Jacobian matrix calculation
         // State transition model (Jacobian matrix) 4x4
-        double wz = x(3);
+
         Fk = Eigen::Matrix4d::Identity();
-        Fk(0, 2) = -v * dt * std::sin(theta + wz * dt / 2.0);
-        Fk(0, 3) = -v * dt * std::sin(theta + wz * dt / 2.0) * (dt / 2.0);
-        Fk(1, 2) =  v * dt * std::cos(theta + wz * dt / 2.0);
-        Fk(1, 3) =  v * dt * std::cos(theta + wz * dt / 2.0) * (dt / 2.0);
+        Fk(0, 2) = -v * dt * std::sin(theta + wz_current * dt / 2.0);
+        Fk(0, 3) = -v * dt * std::sin(theta + wz_current * dt / 2.0) * (dt / 2.0);
+        Fk(1, 2) =  v * dt * std::cos(theta + wz_current * dt / 2.0);
+        Fk(1, 3) =  v * dt * std::cos(theta + wz_current * dt / 2.0) * (dt / 2.0);
         Fk(2, 3) = dt;
 
         // Covariance prediction
