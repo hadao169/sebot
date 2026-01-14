@@ -57,28 +57,27 @@ public:
         I = Eigen::Matrix4d::Identity();
     }
 
-    void predict(double v, double omega) {
+    void predict(double v, double omega, double dt_actual) {
+        this->dt = dt_actual; // Update dt with the actual time delta from the sensor/timer
         double theta = x(2);
-        double wz_current = x(3);
+
         // State prediction using Runge-Kutta 2nd Order
         x(0) += v * dt * std::cos(theta + omega * dt / 2.0);
         x(1) += v * dt * std::sin(theta + omega * dt / 2.0);
         x(2) += omega * dt;
+        x(3) = omega;
 
         x(2) = normalize_angle(x(2));
 
         // Jacobian matrix calculation
         // State transition model (Jacobian matrix) 4x4
-
         Fk = Eigen::Matrix4d::Identity();
-        Fk(0, 2) = -v * dt * std::sin(theta + wz_current * dt / 2.0);
-        Fk(0, 3) = -v * dt * std::sin(theta + wz_current * dt / 2.0) * (dt / 2.0);
-        Fk(1, 2) =  v * dt * std::cos(theta + wz_current * dt / 2.0);
-        Fk(1, 3) =  v * dt * std::cos(theta + wz_current * dt / 2.0) * (dt / 2.0);
-        Fk(2, 3) = dt;
+        Fk(0, 2) = -v * dt * std::sin(theta + omega * dt / 2.0);
+        Fk(1, 2) =  v * dt * std::cos(theta + omega * dt / 2.0);
+        Fk(2, 3) = 0; // wz_k follows input omega directly in this model
 
-        // Covariance prediction
-        P = Fk * P * Fk.transpose() + Qk;
+        // Covariance prediction (Scaling process noise by dt)
+        P = Fk * P * Fk.transpose() + (Qk * dt);
     }
 
     void update(const Eigen::VectorXd& z, const Eigen::VectorXi& measured_indices) {

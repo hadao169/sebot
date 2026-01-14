@@ -26,10 +26,6 @@ def generate_launch_description():
             name='uwb_transform_node',
             output='screen',
             parameters=[{'use_sim_time': use_sim_time}],
-            remappings=[
-                ('odometry/filtered', 'odometry/filtered/global'),
-                ('odometry/uwb', 'odometry/uwb')
-            ]
         ),
 
         Node(
@@ -38,8 +34,12 @@ def generate_launch_description():
             name='ekf_node',
             output='screen',
             parameters=[{'use_sim_time': use_sim_time}],
-            remappings=[
-                ('ekf_odom', 'odometry/filtered/global') 
-            ]
+        ),
+        Node(
+            package="uwb_tracking_ros2",
+            executable="uwb_simulator",
+            name="uwb_simulator",
+            output="screen",
+            parameters=[{'use_sim_time': use_sim_time}]
         )
     ])

@@ -35,6 +35,7 @@ setup(
         'console_scripts': [
             'uwb_tracking_dwm1001 = uwb_tracking_ros2.uwb_tracking_dwm1001:main',
             'viz_dwm1001 = uwb_tracking_ros2.viz_dwm1001:main',
+            'uwb_simulator = uwb_tracking_ros2.UwbSimulator:main'
         ],
     },
 )

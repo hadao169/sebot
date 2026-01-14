@@ -56,10 +56,9 @@ def generate_launch_description():
             output='screen',
             parameters=[{'use_sim_time': use_sim_time}],
             remappings=[
-                ('odometry/filtered', 'odometry/filtered/local'), 
+                ('odometry/filtered', 'odometry/filtered/global'), 
                 ('odometry/uwb', 'odometry/uwb')
             ]
         )
     ])
     
-generate_launch_description()
