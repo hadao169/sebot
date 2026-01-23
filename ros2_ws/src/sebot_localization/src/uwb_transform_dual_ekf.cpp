@@ -28,7 +28,7 @@ public:
             "/dwm1001/DW878F/pose", 10, std::bind(&UwbTransformNode::uwbCallback, this, _1));
         imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
             "imu/data", 10, std::bind(&UwbTransformNode::imuCallback, this, _1));
-        transform_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("odometry/uwb", 10);
+        transform_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("odometry/uwb_data", 10);
 
         datum_set_ = false;
         uwb_count_ = 0;

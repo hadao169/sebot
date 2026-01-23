@@ -204,15 +204,7 @@ class dwm1001_localizer(Node):
 
     def publishTagPositions(self, pose_data: list):
         """Publish raw pose data (Non-KF) to ROS."""
-
-        tag_id = str(self.tag_id)
-        tag_macID = self.tag_macID
-        clean_macID = tag_macID.replace(':', '_')
-
-        ps = create_pose_stamped(self, pose_data, tag_macID)
-
-        # raw_pose_xzy = pose_data[:3]
-
+        ps = create_pose_stamped(self, pose_data, self.tag_id)
         tag = CustomTag()
         tag.header = ps.header
         tag.pose_x = ps.pose.position.x
@@ -224,10 +216,10 @@ class dwm1001_localizer(Node):
         tag.orientation_w = ps.pose.orientation.w
 
         pub = get_tag_publisher(
-            self, self.topics, str(clean_macID), suffix="pose")
+            self, self.topics, self.tag_id, suffix="pose")
         pub.publish(ps)
 
-        update_multitags_list(self.multipleTags, tag, tag_macID)
+        update_multitags_list(self.multipleTags, tag, self.tag_macID)
 
         self.pub_tags.publish(self.multipleTags)
 

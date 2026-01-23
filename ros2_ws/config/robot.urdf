@@ -59,6 +59,17 @@
       </material>
     </visual>
   </link>
+  
+  <link name="laser">
+    <visual>
+      <geometry>
+        <cylinder length="0.05" radius="0.05"/>
+      </geometry>
+      <material name="green">
+        <color rgba="0 1 0 1"/>
+      </material>
+    </visual>
+  </link>
 
   <joint name="base_to_imu_link" type="fixed">
     <parent link="base_link"/>
@@ -81,5 +92,10 @@
     <parent link="base_link"/>
     <child link="caster_wheel"/>
     <origin xyz="0.2 0 -0.05" rpy="0 0 0"/>
+  </joint>
+  <joint name="base_to_lidar_link" type="fixed">
+    <parent link="base_link"/>
+    <child link="laser"/>
+    <origin xyz="0 0 0.15" rpy="0 0 0"/>
   </joint>
 </robot>
