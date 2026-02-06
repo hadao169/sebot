@@ -50,3 +50,4 @@ build
 install
 log
 www
+/venv_osmnx

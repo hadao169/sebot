@@ -70,6 +70,7 @@ struct ImuPublisher : public PacketCallback, PublisherHelperFunctions
         bool quaternion_available = packet.containsOrientation();
         bool gyro_available = packet.containsCalibratedGyroscopeData();
         bool accel_available = packet.containsCalibratedAcceleration();
+        bool free_accel_available = packet.containsFreeAcceleration();
 
         geometry_msgs::msg::Quaternion quaternion;
         if (quaternion_available)
@@ -91,14 +92,24 @@ struct ImuPublisher : public PacketCallback, PublisherHelperFunctions
             gyro.z = g[2];
         }
 
+        // geometry_msgs::msg::Vector3 accel;
+        // if (accel_available)
+        // {
+        //     XsVector a = packet.f();
+        //     accel.x = a[0];
+        //     accel.y = a[1];
+        //     accel.z = a[2];
+        // }
+
         geometry_msgs::msg::Vector3 accel;
-        if (accel_available)
+        if (free_accel_available)
         {
-            XsVector a = packet.calibratedAcceleration();
+            XsVector a = packet.freeAcceleration();
             accel.x = a[0];
             accel.y = a[1];
             accel.z = a[2];
         }
+
 
         // Imu message, publish if any of the fields is available
         if (quaternion_available || accel_available || gyro_available)
@@ -161,16 +172,16 @@ struct ImuPublisher : public PacketCallback, PublisherHelperFunctions
             }
 
             msg.linear_acceleration = accel;
-            if (accel_available)
-            {
-                msg.linear_acceleration_covariance[0] = linear_acceleration_variance[0];
-                msg.linear_acceleration_covariance[4] = linear_acceleration_variance[1];
-                msg.linear_acceleration_covariance[8] = linear_acceleration_variance[2];
-            }
-            else
-            {
-                msg.linear_acceleration_covariance[0] = -1; // mark as not available
-            }
+            // if (accel_available)
+            // {
+            //     msg.linear_acceleration_covariance[0] = linear_acceleration_variance[0];
+            //     msg.linear_acceleration_covariance[4] = linear_acceleration_variance[1];
+            //     msg.linear_acceleration_covariance[8] = linear_acceleration_variance[2];
+            // }
+            // else
+            // {
+            //     msg.linear_acceleration_covariance[0] = -1; // mark as not available
+            // }
 
             pub->publish(msg);
         }

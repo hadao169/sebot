@@ -144,17 +144,16 @@ class dwm1001_localizer(Node):
                 return
             pose_data = self._extract_pose_data(serialReadLine)
             if self.use_least_square:
-                    self.publishTagPoseLS(self.tag_id, self.tag_macID, serialReadLine)
-            if pose_data:
+                    self.publishTagPoseLS(self.tag_id, self.tag_macID, serialReadLine, pose_data)
+            if pose_data and not self.use_least_square:
                 self.publishTagPositions(pose_data)
         except Exception:
             pass
 
-    def publishTagPoseLS(self, tag_id: int, tag_macID: str, serialReadLine):
+    def publishTagPoseLS(self, tag_id: int, tag_macID: str, serialReadLine, pose_data):
         serialReadLine_str = serialReadLine.decode('UTF-8', errors='ignore')
         raw_uwb_data = serialReadLine_str.strip().split() # ['A1[...]=...', 'A2[...]=...', ...]
         # self.logger.log_raw(raw_uwb_data)
-        # self.get_logger().info(f"[LS-RAW] {raw_uwb_data}")
 
         if tag_macID not in self.topics_ls:
             self.topics_ls[tag_macID] = ls()
@@ -163,16 +162,10 @@ class dwm1001_localizer(Node):
 
         ls_object.process_uwb_data(raw_uwb_data)
 
-        # if not ls_object.measurements:
-        #     self.get_logger().warn("[LS] No measurements → SKIP LS")
-        #     return
-
-        # if ls_object.original_position is None:
-        #     self.get_logger().warn("[LS] No original position → SKIP LS")
-        #     return
-
         estimated_x, estimated_y = ls_object.estimate_position(
                 max_iterations=self.least_square_max_iterations, tolerance=self.least_square_tolerance)
+        
+        pos = ls_object.original_position
 
         self.get_logger().info(f"[LS] Estimated: x={estimated_x}, y={estimated_y}")
 
@@ -184,23 +177,31 @@ class dwm1001_localizer(Node):
         pub = get_tag_publisher(self, self.topics_ls, clean_id_str, suffix="pose_ls")
 
         pub.publish(ps)
+        
+        # For EKF
+        ps_ekf = create_pose_stamped(self, pos, tag_id)
+        pub_ekf = get_tag_publisher(
+            self, self.topics, self.tag_id, suffix="pose")
+        pub_ekf.publish(ps_ekf)
 
-        tag = CustomTag()
-        tag.header = ps.header
-        tag.pose_x, tag.pose_y, tag.pose_z = xyz
-        tag.orientation_w = ps.pose.orientation.w
+        # tag = CustomTag()
+        # tag.header = ps.header
+        # tag.pose_x, tag.pose_y, tag.pose_z = xyz
+        # tag.orientation_w = ps.pose.orientation.w
 
-        if not hasattr(self, "multipleTags_ls"):
-            self.get_logger().info("[LS] Creating new MultiTags_ls")
-            self.multipleTags_ls = MultiTags()
+        # if not hasattr(self, "multipleTags_ls"):
+        #     self.get_logger().info("[LS] Creating new MultiTags_ls")
+        #     self.multipleTags_ls = MultiTags()
 
-        update_multitags_list(self.multipleTags_ls, tag, tag_macID)
+        # update_multitags_list(self.multipleTags_ls, tag, tag_macID)
 
-        if not hasattr(self, "pub_tags_ls"):
-            self.get_logger().info("[LS] Creating publisher /multiTags_ls")
-            self.pub_tags_ls = self.create_publisher(MultiTags, "/dwm1001/multiTags_ls", 100)
+        # if not hasattr(self, "pub_tags_ls"):
+        #     self.get_logger().info("[LS] Creating publisher /multiTags_ls")
+        #     self.pub_tags_ls = self.create_publisher(MultiTags, "/dwm1001/multiTags_ls", 100)
 
-        self.pub_tags_ls.publish(self.multipleTags_ls)
+        # self.pub_tags_ls.publish(self.multipleTags_ls)
+        
+        
 
     def publishTagPositions(self, pose_data: list):
         """Publish raw pose data (Non-KF) to ROS."""

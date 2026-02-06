@@ -56,17 +56,16 @@ def generate_launch_description():
             output='screen',
             parameters=[{'use_sim_time': use_sim_time}],
             remappings=[
-                ('odometry/filtered', 'odometry/filtered/global'), 
                 ('odometry/uwb_data', 'odometry/uwb_data')
             ]
         ),
         
-        Node(
-            package="uwb_tracking_ros2",
-            executable="uwb_simulator",
-            name="uwb_simulator",
-            output="screen",
-            parameters=[{'use_sim_time': use_sim_time}]
-        )
+        # Node(
+        #     package="uwb_tracking_ros2",
+        #     executable="uwb_simulator",
+        #     name="uwb_simulator",
+        #     output="screen",
+        #     parameters=[{'use_sim_time': use_sim_time}]
+        # )
     ])
     

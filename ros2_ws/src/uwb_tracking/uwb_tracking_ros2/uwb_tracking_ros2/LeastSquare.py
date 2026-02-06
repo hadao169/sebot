@@ -10,9 +10,10 @@ class LeastSquare():
         self.quality = 0
         self.measurements = []
 
+    # [CD37[0.00,0.00,0.00]=2.80, 1495[0.00,3.99,0.00]=2.74, 592F[5.00,0.00,0.00]=3.60, 5B01[5.00,3.99,0.00]=3.70, le_us=3387, est[1.90,1.96,0.15,91]]
     def process_uwb_data(self, uwb_data):
         self.measurements = []       
-        self.original_position = None
+        
         self.quality = 0
         
         if uwb_data is None:
@@ -25,8 +26,8 @@ class LeastSquare():
                     
                 elif anchor.startswith("est"):
                     position = anchor.split("[")[1].split("]")[0].split(",")
-                    self.original_position = (
-                        float(position[0]), float(position[1]))
+                    self.original_position = [
+                        float(position[0]), float(position[1]), float(position[2])]
                     self.quality = position[3]
                 else:
                     measurement = {}
@@ -40,7 +41,7 @@ class LeastSquare():
 
             except (ValueError, IndexError) as e:
                 continue 
-        
+            
 
     def estimate_position(self, max_iterations=20, tolerance=0.001):  
         if self.original_position is None or not self.measurements:
@@ -91,6 +92,4 @@ class LeastSquare():
         error_y = calculated_position[1] - self.original_position[1]
         error_magnitude = math.sqrt(error_x**2 + error_y**2)
         return error_magnitude
-    
-
     

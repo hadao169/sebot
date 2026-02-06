@@ -62,7 +62,7 @@
         # ---------------------------
         # If you want to configure your sensor, firstly set this flag to true, then change desired values for the parameters below.
         # Note: This configuration is required only once, once it is successful, the configurations are stored in the sensor, then you could set this to false.
-        enable_deviceConfig: false
+        enable_deviceConfig: true
 
         # Sensor Extended Kalman Filter Option Configurations:
         # --------------------------
@@ -83,10 +83,10 @@
         mti_filter_option: 0
 
         # For MTi-620(R)/MTi-630(R), and Sirius/Avior VRU/AHRS models:  roll pitch options: "Responsive", "General", "Robust"
-        filter_label_rollpitch: "Robust"
+        filter_label_rollpitch: "Responsive"
         # MTI-620(R) and Sirius/Avior VRU models, yaw has 2 options: "VRU", "VRUAHS" 
         # MTI-630(R) and Sirius/Avior AHRS models, yaw has 3 options: "FixedMagRef", "NorthReference", "VRU", "VRUAHS" 
-        filter_label_yaw: "NorthReference"
+        filter_label_yaw: "VRU"
 
 
         # MTi-2/320/200: filter only has VRU, you could enable the AHS options:
@@ -139,15 +139,15 @@
         pub_acceleration: true
         pub_dq: false
         pub_dv: false
-        pub_mag: true
-        pub_temperature: true
-        pub_pressure: true
+        pub_mag: false
+        pub_temperature: false
+        pub_pressure: false
         pub_accelerationhr: false      #High Rate Data Acceleration, when this is true, set enable_high_rate to true as well
         pub_angular_velocity_hr: false #High Rate Data Angular Velocity,  when this is true, set enable_high_rate to true as well
         pub_transform: true
         pub_status: true
         pub_twist: true         # For GNSS/INS Version of MTI only
-        pub_gnss: true          # For GNSS/INS Version of MTI only
+        pub_gnss: false          # For GNSS/INS Version of MTI only
         pub_positionLLA: true   # For GNSS/INS Version of MTI only
         pub_velocity: true      # For GNSS/INS Version of MTI only
         pub_nmea: true          # For GNSS/INS Version of MTI only
