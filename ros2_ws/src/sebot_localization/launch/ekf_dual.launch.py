@@ -24,12 +24,12 @@ def generate_launch_description():
             default_value='false',
             description='Use simulation clock'),
 
-        # Node(
-        #     package='tf2_ros',
-        #     executable='static_transform_publisher',
-        #     name='base_to_uwb',
-        #     arguments=['0.05', '0', '0', '0', '0', '0', 'base_link', 'uwb_link']
-        # ),
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            name='base_to_uwb',
+            arguments=['0', '-0.05', '0', '0', '0', '0', 'base_link', 'uwb_link']
+        ),
 
         Node(
             package='robot_localization',
@@ -49,16 +49,16 @@ def generate_launch_description():
             remappings=[('odometry/filtered', 'odometry/filtered/global')]
         ),
 
-        Node(
-            package='sebot_localization',
-            executable='uwb_transform_dual_ekf_node',
-            name='uwb_transform_dual_ekf_node',
-            output='screen',
-            parameters=[{'use_sim_time': use_sim_time}],
-            remappings=[
-                ('odometry/uwb_data', 'odometry/uwb_data')
-            ]
-        ),
+        # Node(
+        #     package='sebot_localization',
+        #     executable='uwb_transform_dual_ekf_node',
+        #     name='uwb_transform_dual_ekf_node',
+        #     output='screen',
+        #     parameters=[{'use_sim_time': use_sim_time}],
+        #     remappings=[
+        #         ('odometry/uwb_data', 'odometry/uwb_data')
+        #     ]
+        # ),
         
         # Node(
         #     package="uwb_tracking_ros2",
