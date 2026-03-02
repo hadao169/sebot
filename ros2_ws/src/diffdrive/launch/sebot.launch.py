@@ -38,7 +38,7 @@ def generate_launch_description():
             os.path.join(
                 get_package_share_directory('sebot_localization'),
                 'launch',
-                'ekf.launch.py'
+                'ekf_dual.launch.py'
             )
         )
     )
@@ -113,19 +113,7 @@ def generate_launch_description():
         #       colcon_prefix_path,
         #       'config',
         #       'params.yaml')]
-        # ),
-
-        # Node(
-        #     package='diffdrive',
-        #     executable='odom_imu',
-        #     name='odom_imu_node',
-        #     #namespace = NAMESPACE,
-        #     output='screen',
-        #     parameters=[os.path.join(
-        #       colcon_prefix_path,
-        #       'config',
-        #       'params.yaml')]
-        # )                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+        #                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
         
         Node(
             package='diffdrive',
@@ -138,9 +126,8 @@ def generate_launch_description():
               'config',
               'params.yaml')]
         ),
-        # xsens_launch,
-        #uwb_launch,
+        xsens_launch,
+        uwb_launch,
         ekf_launch,
-        
     ])
 

@@ -21,13 +21,14 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument(
             'use_sim_time',
-            default_value='false',
+            default_value='true',
             description='Use simulation clock'),
-
+        
         Node(
             package='tf2_ros',
             executable='static_transform_publisher',
-            name='base_to_uwb',
+            name='static_transform_publisher_uwb_to_base_link',
+            output='screen',
             arguments=['0', '-0.05', '0', '0', '0', '0', 'base_link', 'uwb_link']
         ),
 
@@ -49,23 +50,20 @@ def generate_launch_description():
             remappings=[('odometry/filtered', 'odometry/filtered/global')]
         ),
 
-        # Node(
-        #     package='sebot_localization',
-        #     executable='uwb_transform_dual_ekf_node',
-        #     name='uwb_transform_dual_ekf_node',
-        #     output='screen',
-        #     parameters=[{'use_sim_time': use_sim_time}],
-        #     remappings=[
-        #         ('odometry/uwb_data', 'odometry/uwb_data')
-        #     ]
-        # ),
+        Node(
+            package='sebot_localization',
+            executable='uwb_transform_dual_ekf_node',
+            name='uwb_transform_dual_ekf_node',
+            output='screen',
+            parameters=[{'use_sim_time': use_sim_time}],
+        ),
+        Node(
+            package='sebot_localization',
+            executable='ekf_node',
+            name='ekf_node',
+            output='screen',
+            parameters=[{'use_sim_time': use_sim_time}],
+        ),
         
-        # Node(
-        #     package="uwb_tracking_ros2",
-        #     executable="uwb_simulator",
-        #     name="uwb_simulator",
-        #     output="screen",
-        #     parameters=[{'use_sim_time': use_sim_time}]
-        # )
     ])
     

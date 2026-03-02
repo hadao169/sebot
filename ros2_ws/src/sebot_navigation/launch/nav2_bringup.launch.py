@@ -48,7 +48,7 @@ def generate_launch_description():
         Node(package='nav2_waypoint_follower', executable='waypoint_follower',
              name='waypoint_follower', output='screen', parameters=[params_file]),
 
-        Node(package='nav2_velocity_smoother',                                          executable='velocity_smoother',
+        Node(package='nav2_velocity_smoother',executable='velocity_smoother',
              name='velocity_smoother', output='screen', parameters=[params_file]),
 
         Node(package='nav2_smoother', executable='smoother_server',

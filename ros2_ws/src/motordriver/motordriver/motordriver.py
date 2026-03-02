@@ -53,7 +53,7 @@ class MotordriverNode(Node):
         self.arduino.write(self.msg.encode())
     
 
-    if self.timercount == 11:
+    if self.timercount == 2:
         if self.msg == "x\n":
             self.arduino.write(self.msg.encode())
         self.msg = "x\n"
@@ -75,7 +75,7 @@ class MotordriverNode(Node):
             # Julkaistaan viesti
             self.publisher.publish(msg)
           except Exception as err:
-            pass
+            self.get_logger().error(f"Reading data error: {err}")
 
     self.timercount += 1
 

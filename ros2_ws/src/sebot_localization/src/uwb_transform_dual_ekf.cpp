@@ -20,13 +20,13 @@ class UwbTransformNode : public rclcpp::Node {
 public:
     UwbTransformNode() : Node("uwb_transform_node"), 
                          world_frame_id_("map"),
-                         base_link_frame_id_("base_footprint"),
+                         base_link_frame_id_("base_link"),
                          sample_threshold_(50) {
         tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
         tf_listener_ = std::make_unique<tf2_ros::TransformListener>(*tf_buffer_);
 
         uwb_sub_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(
-            "/dwm1001/DW878F/pose", 10, std::bind(&UwbTransformNode::uwbCallback, this, _1));
+            "/dwm1001/id_DW878F/pose", 10, std::bind(&UwbTransformNode::uwbCallback, this, _1));
         imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
             "imu/data", 10, std::bind(&UwbTransformNode::imuCallback, this, _1));
         transform_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("odometry/uwb_data", 10);
@@ -37,7 +37,7 @@ public:
         accum_uwb_x_ = 0.0; accum_uwb_y_ = 0.0;
         accum_imu_sin_ = 0.0; accum_imu_cos_ = 0.0;
         
-        xy_variance_ = 0.5;
+        xy_variance_ = 0.01;
         z_variance_ = 9999.0;
         yaw_variance_ = 9999.0;
     }
@@ -130,7 +130,10 @@ private:
         out_msg.child_frame_id = base_link_frame_id_;
         out_msg.pose.pose.position.x = map_x;
         out_msg.pose.pose.position.y = map_y;
-        out_msg.pose.pose.orientation.w = 1.0;
+        tf2::Quaternion q_map_frame;
+        double final_yaw = interpolated_yaw - yaw0_;
+        q_map_frame.setRPY(0, 0, final_yaw);
+        out_msg.pose.pose.orientation = tf2::toMsg(q_map_frame);
 
         std::fill(out_msg.pose.covariance.begin(), out_msg.pose.covariance.end(), 0.0);
         out_msg.pose.covariance[0] = xy_variance_;
@@ -146,6 +149,7 @@ private:
     Eigen::Vector2d getOffsetInWorldFrame(const tf2::Quaternion & robot_q) {
         try {
             auto t = tf_buffer_->lookupTransform(base_link_frame_id_, "uwb_link", tf2::TimePointZero);
+            RCLCPP_INFO_ONCE(this->get_logger(), "Đã nhận TF: x=%f, y=%f", t.transform.translation.x, t.transform.translation.y);
             tf2::Vector3 offset_local(t.transform.translation.x, t.transform.translation.y, 0.0);
             tf2::Vector3 offset_world = tf2::quatRotate(robot_q, offset_local);
             return Eigen::Vector2d(offset_world.x(), offset_world.y());

@@ -142,7 +142,7 @@ def generate_launch_description():
               'config',
               'params.yaml')]
         ),
-        xsens_launch,
-        ekf_launch,
+        # xsens_launch,
+        # ekf_launch,
     ])
 
