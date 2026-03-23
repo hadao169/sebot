@@ -2,13 +2,21 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch_ros.actions import Node
-
+from launch.actions import IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 def generate_launch_description():
     my_pkg_dir = get_package_share_directory('sebot_navigation')
     params_file = os.path.join(my_pkg_dir, 'config', 'nav2_params.yaml')
-    map_config = os.path.expanduser("~/sebot/ros2_ws/sebot_map.yaml")
- 
+    map_config = os.path.expanduser("~/sebot/ros2_ws/map.yaml")
+
+
+    nav2_dir = get_package_share_directory('nav2_bringup')
+    rviz_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(nav2_dir, 'launch', 'rviz_launch.py')
+    ))
+    
     lifecycle_nodes = [
         'map_server',
         'amcl',
@@ -16,14 +24,13 @@ def generate_launch_description():
         'controller_server',
         'behavior_server',
         'bt_navigator',
-        'waypoint_follower',
         'velocity_smoother',
         'smoother_server'
     ]
 
     return LaunchDescription([
-        Node(package='nav2_amcl', executable='amcl', name='amcl',
-             output='screen', parameters=[params_file]),
+        #    Node(package='nav2_amcl', executable='amcl', name='amcl',
+        #         output='screen', parameters=[params_file]),
 
         Node(
             package='nav2_map_server',
@@ -45,10 +52,10 @@ def generate_launch_description():
         Node(package='nav2_bt_navigator', executable='bt_navigator',
              name='bt_navigator', output='screen', parameters=[params_file]),
 
-        Node(package='nav2_waypoint_follower', executable='waypoint_follower',
-             name='waypoint_follower', output='screen', parameters=[params_file]),
+        #    Node(package='nav2_waypoint_follower', executable='waypoint_follower',
+        #         name='waypoint_follower', output='screen', parameters=[params_file]),
 
-        Node(package='nav2_velocity_smoother',executable='velocity_smoother',
+        Node(package='nav2_velocity_smoother', executable='velocity_smoother',
              name='velocity_smoother', output='screen', parameters=[params_file]),
 
         Node(package='nav2_smoother', executable='smoother_server',
@@ -66,4 +73,7 @@ def generate_launch_description():
                         {'autostart': True},
                         {'node_names': lifecycle_nodes}]
         ),
+        rviz_launch
     ])
+
+

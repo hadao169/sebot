@@ -27,6 +27,8 @@ setup(
         'console_scripts': [
             'odom = diffdrive.odom:main',
             'cmd_vel = diffdrive.cmd_vel:main',
+            'plot = diffdrive.plot:main',
+            'transform = diffdrive.transform:main'
         ],
     },
 )

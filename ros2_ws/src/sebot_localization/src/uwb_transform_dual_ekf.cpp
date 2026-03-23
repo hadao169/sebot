@@ -38,8 +38,8 @@ public:
         accum_imu_sin_ = 0.0; accum_imu_cos_ = 0.0;
         
         xy_variance_ = 0.01;
-        z_variance_ = 9999.0;
-        yaw_variance_ = 9999.0;
+        orientation_variance_ = 1e9;
+        z_variance_ = 1e9;
     }
 
 private:
@@ -139,9 +139,9 @@ private:
         out_msg.pose.covariance[0] = xy_variance_;
         out_msg.pose.covariance[7] = xy_variance_;
         out_msg.pose.covariance[14] = z_variance_;
-        out_msg.pose.covariance[21] = 9999.0;
-        out_msg.pose.covariance[28] = 9999.0;
-        out_msg.pose.covariance[35] = yaw_variance_;
+        out_msg.pose.covariance[21] = orientation_variance_;
+        out_msg.pose.covariance[28] = orientation_variance_;
+        out_msg.pose.covariance[35] = orientation_variance_;
 
         transform_pub_->publish(out_msg);
     }
@@ -166,7 +166,7 @@ private:
     std::string world_frame_id_, base_link_frame_id_;
     bool datum_set_;
     size_t uwb_count_, imu_count_, sample_threshold_;
-    double accum_uwb_x_, accum_uwb_y_, accum_imu_sin_, accum_imu_cos_, xy_variance_, z_variance_, yaw_variance_, yaw0_;
+    double accum_uwb_x_, accum_uwb_y_, accum_imu_sin_, accum_imu_cos_, xy_variance_, z_variance_, orientation_variance_, yaw0_;
     Eigen::Vector2d pos0_uwb_;
 };
 

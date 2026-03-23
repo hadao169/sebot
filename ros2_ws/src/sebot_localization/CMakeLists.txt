@@ -28,16 +28,6 @@ ament_target_dependencies(ekf_node
 )
 target_link_libraries(ekf_node Eigen3::Eigen)
 
-add_executable(uwb_transform_node src/uwb_transform.cpp)
-target_include_directories(uwb_transform_node PRIVATE
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  ${Eigen3_INCLUDE_DIRS}
-)
-ament_target_dependencies(uwb_transform_node
-  rclcpp sensor_msgs nav_msgs geometry_msgs std_msgs tf2 tf2_ros tf2_geometry_msgs
-)
-target_link_libraries(uwb_transform_node Eigen3::Eigen)
-
 add_executable(uwb_transform_dual_ekf_node src/uwb_transform_dual_ekf.cpp)
 target_include_directories(uwb_transform_dual_ekf_node PRIVATE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -48,11 +38,21 @@ ament_target_dependencies(uwb_transform_dual_ekf_node
 )
 target_link_libraries(uwb_transform_dual_ekf_node Eigen3::Eigen)
 
+add_executable(uwb_transform src/uwbTransform.cpp)
+target_include_directories(uwb_transform PRIVATE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  ${Eigen3_INCLUDE_DIRS}
+)
+ament_target_dependencies(uwb_transform
+  rclcpp sensor_msgs nav_msgs geometry_msgs std_msgs tf2 tf2_ros tf2_geometry_msgs
+)
+target_link_libraries(uwb_transform Eigen3::Eigen)
+
 
 install(TARGETS 
   ekf_node
-  uwb_transform_node
   uwb_transform_dual_ekf_node
+  uwb_transform
   DESTINATION lib/${PROJECT_NAME}
 )
 

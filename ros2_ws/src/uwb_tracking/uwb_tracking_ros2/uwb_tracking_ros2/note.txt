@@ -1,7 +1,0 @@
-file 1-6: place horizontally
-file 7-8: place upright 
-file 9-12: place upright (straight line trajectory)
-file: 13-20: place upright (encoder for traval distance and imu for heading yaw)
-    + Note: position from UWB has a flutuating range of 10 cm (not accurate) => leading to larger error between odometry of encoder plus imu and uwb itself
-note: tru di do lech tu uwb den tam truc di chuyen
-

@@ -7,6 +7,7 @@ from launch_ros.actions import Node
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.actions import IncludeLaunchDescription
 
+
 def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')
 
@@ -32,7 +33,7 @@ def generate_launch_description():
             )
         )
     )
-    
+
     lidar_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(
@@ -42,19 +43,40 @@ def generate_launch_description():
             )
         )
     )
+    
+    uwb_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory('uwb_tracking_ros2'),
+                'launch',
+                'uwb_tracking_dwm1001.launch.py'
+            )
+        )
+    )
+    
+    ekf_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory('sebot_localization'),
+                'launch',
+                'ekf_dual.launch.py'
+            )
+        )
+    )
 
     return LaunchDescription([
         DeclareLaunchArgument(
             'use_sim_time',
             default_value='false',
             description='Use simulation (Gazebo) clock if true'),
-            
+
         Node(
             package='robot_state_publisher',
             executable='robot_state_publisher',
             name='robot_state_publisher',
             output='screen',
-            parameters=[{'use_sim_time': use_sim_time, 'robot_description': robot_desc}],
+            parameters=[{'use_sim_time': use_sim_time,
+                         'robot_description': robot_desc}],
         ),
 
         Node(
@@ -66,9 +88,7 @@ def generate_launch_description():
                 '-d',
                 os.path.join(
                     get_package_share_directory('diffdrive'),
-                    'rviz',   
-                )
-            ],
+                    'rviz')],
             parameters=[{'use_sim_time': use_sim_time}],
         ),
 
@@ -78,9 +98,9 @@ def generate_launch_description():
             name='motordriver_node',
             output='screen',
             parameters=[os.path.join(
-              colcon_prefix_path,
-              'config',
-              'params.yaml')]
+                colcon_prefix_path,
+                'config',
+                'params.yaml')]
         ),
 
         Node(
@@ -89,31 +109,23 @@ def generate_launch_description():
             name='odom_node',
             output='screen',
             parameters=[os.path.join(
-              colcon_prefix_path,
-              'config',
-              'params.yaml')]
-        ),       
-                                                                                 
+                colcon_prefix_path,
+                'config',
+                'params.yaml')]
+        ),
+
         Node(
             package='diffdrive',
             executable='cmd_vel',
             name='cmd_vel_node',
             output='screen',
             parameters=[os.path.join(
-              colcon_prefix_path,
-              'config',
-              'params.yaml')]
-        ),
-         
-        Node(
-            package='robot_localization',
-            executable='ekf_node',
-            name='ekf_filter_node',
-            output='screen',
-            parameters=[os.path.join(get_package_share_directory("sebot_localization"), 'config', 'ekf.yaml')]
+                colcon_prefix_path,
+                'config',
+                'params.yaml')]
         ),
         xsens_launch,
         lidar_launch,
+        uwb_launch,
+        ekf_launch,
     ])
-
-

@@ -103,18 +103,18 @@ def generate_launch_description():
               'params.yaml')]
         ),
 
-        # Node(
-        #     package='diffdrive',
-        #     executable='odom',
-        #     name='odom_node',
-        #     #namespace = NAMESPACE,
-        #     output='screen',
-        #     parameters=[os.path.join(
-        #       colcon_prefix_path,
-        #       'config',
-        #       'params.yaml')]
-        #                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
-        
+        Node(
+            package='diffdrive',
+            executable='odom',
+            name='odom_node',
+            #namespace = NAMESPACE,
+            output='screen',
+            parameters=[os.path.join(
+              colcon_prefix_path,
+              'config',
+              'params.yaml')]
+        ),       
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
         Node(
             package='diffdrive',
             executable='cmd_vel',
@@ -126,6 +126,7 @@ def generate_launch_description():
               'config',
               'params.yaml')]
         ),
+        
         xsens_launch,
         uwb_launch,
         ekf_launch,
