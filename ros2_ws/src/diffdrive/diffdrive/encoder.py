@@ -21,7 +21,7 @@ class Encoder():
     # kierrokset per metri = 1m / renkaan kehä
     # ticks per metri = E * (1m / (2 * pi * R)) = E / (2 * pi * R)
     
-    self.ticks_per_meter = self.ticks_per_revolution / (2 * math.pi * self.wheel_radius)
+    self.ticks_per_meter = self.ticks_per_revolution / (2 * math.pi * self.wheel_radius) # 9500 ticks per meter
 
     self.offset = None
     self.encoder = None
@@ -72,3 +72,7 @@ class Encoder():
       d = (self.prev_position - self.position) / self.ticks_per_meter
       self.prev_position = self.position
       return d
+
+  
+  def getEncoder(self):
+    return self.ticks_per_meter, self.ticks_per_revolution

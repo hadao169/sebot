@@ -1,0 +1,9 @@
+uwb_transform_node:
+    ros__parameters:
+        map_frame_id: map
+        world_frame_id: map
+        base_link_frame_id: base_footprint
+        sample_threshold: 50
+        xy_variance: 0.01
+        z_variance: 1e9
+        orientation_variance: 1e9

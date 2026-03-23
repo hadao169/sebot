@@ -49,6 +49,4 @@ CATKIN_IGNORE
 build
 install
 log
-www
-
-./note.txt
+venv_osmnx/

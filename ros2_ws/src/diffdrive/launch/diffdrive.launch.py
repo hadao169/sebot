@@ -22,10 +22,9 @@ def generate_launch_description():
         urdf_file_name)
     with open(urdf, 'r') as infp:
         robot_desc = infp.read()
-    print(urdf)
     if not robot_desc.strip():
         raise RuntimeError("robot_description is empty! Check your URDF file.")
-
+    print("robot_description loaded.", urdf)
 
     xsens_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -143,7 +142,7 @@ def generate_launch_description():
               'config',
               'params.yaml')]
         ),
-        xsens_launch,
-        ekf_launch,
+        # xsens_launch,
+        # ekf_launch,
     ])
 

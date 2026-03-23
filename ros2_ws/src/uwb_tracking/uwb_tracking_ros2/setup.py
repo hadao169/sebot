@@ -25,17 +25,12 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    author='Lauritz Keysberg, Cung Lian Sang',
-    author_email='lkeysberg@techfak.uni-bielefeld.de, csang@techfak.uni-bielefeld.de',
-    maintainer='ROS 2 Developer',
     maintainer_email='ros2@ros.com',
     description='UWB Tracking in ROS2.',
     license='MIT',
     entry_points={
         'console_scripts': [
             'uwb_tracking_dwm1001 = uwb_tracking_ros2.uwb_tracking_dwm1001:main',
-            'viz_dwm1001 = uwb_tracking_ros2.viz_dwm1001:main',
-            'ls_plotter = uwb_tracking_ros2.plot_position:main',
         ],
     },
 )

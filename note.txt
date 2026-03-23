@@ -1,4 +1,0 @@
-- Taylor serier expansion 
-- Gauss - Newton (Iterative Non-linear Least Squares)
-- KF and EKF
-- ros2_controller packages

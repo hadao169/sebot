@@ -6,12 +6,16 @@ import math
 class LeastSquare():
     def __init__(self, num_anchors=4):
         self.num_anchors = num_anchors
-        self.measurements = []
         self.original_position = None
+        self.quality = 0
+        self.measurements = []
 
-    def process_uwb_data(self, uwb_data):       
-        self.measurements = []
-        self.original_position = None
+    # [CD37[0.00,0.00,0.00]=2.80, 1495[0.00,3.99,0.00]=2.74, 592F[5.00,0.00,0.00]=3.60, 5B01[5.00,3.99,0.00]=3.70, le_us=3387, est[1.90,1.96,0.15,91]]
+    def process_uwb_data(self, uwb_data):
+        self.measurements = []       
+        
+        self.quality = 0
+        
         if uwb_data is None:
             raise ValueError("UWB data is not provided.")
 
@@ -22,9 +26,9 @@ class LeastSquare():
                     
                 elif anchor.startswith("est"):
                     position = anchor.split("[")[1].split("]")[0].split(",")
-                    self.original_position = (
-                        float(position[0]), float(position[1]))
-                        
+                    self.original_position = [
+                        float(position[0]), float(position[1]), float(position[2])]
+                    self.quality = position[3]
                 else:
                     measurement = {}
                     measurement["id"] = anchor[0:4]
@@ -34,10 +38,10 @@ class LeastSquare():
                     measurement["z"] = float(xyz[2])
                     measurement["range"] = float(anchor.split("=")[1])
                     self.measurements.append(measurement)
-                    
+
             except (ValueError, IndexError) as e:
                 continue 
-
+            
 
     def estimate_position(self, max_iterations=20, tolerance=0.001):  
         if self.original_position is None or not self.measurements:

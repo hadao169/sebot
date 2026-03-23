@@ -236,7 +236,7 @@ From the obtained data, curves can be formed that clarify the interpretation of 
 
 Analyzing the values is easy by copying them to an Excel spreadsheet and creating a line graph. By trying different values, you can observe how they affect motor rotation.
 
-![pwm](kuvat/pwm.png)
+![pwm](/images/pwm.png)
 
 If the encoder values do not update even though the motor is rotating, check the connections carefully. If the encoder values appear to be in the wrong direction (e.g., motors rotate in the same direction but values decrease on one encoder), the signals may be crossed. In this case, correct the connections by swapping the incorrectly connected signal wires.
 
