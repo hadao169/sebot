@@ -2,65 +2,96 @@
 
 ## System Integration: IMU, Wheel Encoder, UWB
 
-This document provides a technical walkthrough for implementing a localization system. By fusing high-frequency relative motion data with absolute global references, we ensure stable and accurate navigation for autonomous systems.
+This document describes the implementation of a localization system for a differential‑drive robot equipped with an IMU, wheel encoders, and an Ultra‑Wideband (UWB) system that replaces traditional GPS. By fusing high‑frequency relative motion data with absolute global references, stable and accurate navigation can be ensured for autonomous systems.
+
+---
 
 ## 1. How the Sensors Work
 
-### **Inertial Measurement Unit (IMU)**
+### Inertial Measurement Unit (IMU)
 
-- **Mechanism:** Contains a 3-axis gyroscope to measure angular velocity ($\omega$) and a 3-axis accelerometer to measure linear acceleration ($a$).
-- **Role:** Provides high-frequency data for rapid movement tracking and orientation. It is the "inner ear" of the robot.
-- **Pros/Cons:** Very fast response but suffers from "drift" (accumulated error) over time.
+- **Mechanism:**  
+  Contains a 3‑axis gyroscope to measure angular velocity ($\omega$) and a 3‑axis accelerometer to measure linear acceleration ($a$).
 
-### **Wheel Encoders (Odometry)**
+- **Role:**  
+  Provides high‑frequency data for rapid movement tracking and orientation. It serves as the “inner ear” of the robot.
 
-- **Mechanism:** Sensors count the ticks of motor shafts to measure wheel rotation.
-- **Role:** Calculates linear displacement and heading through dead reckoning based on the robot's kinematics (e.g., Differential Drive).
-- **Pros/Cons:** Reliable over short distances; fails during wheel slippage or on carpet/uneven terrain.
+- **Pros/Cons:**  
+  Very fast response but suffers from “drift” (accumulated error) over time.
 
-### **Ultra-Wideband (UWB)**
+### Wheel Encoders (Odometry)
 
-- **Role:** Provides absolute $X, Y, Z$ coordinates
-- **Pros:** Achieves 2–10 cm accuracy; high immunity to multipath interference (distinguishes direct vs. reflected pulses); low power spectral density prevents interference with other radio signals.
-- **Cons:** Performance can degrade in environments with extreme metallic density.
+- **Mechanism:**  
+  Sensors count the ticks of motor shafts to measure wheel rotation.
 
-### **LiDAR (Light Detection and Ranging)**
+- **Role:**  
+  Calculates linear displacement and heading through dead reckoning based on the robot’s kinematics (e.g., differential drive).
 
-- **Mechanism:** Emits laser pulses to measure distances, creating a 360° point cloud of the environment.
-- **Role:** Performs "Scan Matching" against a known map to determine precise location relative to structural geometry.
-- **Pros/Cons:** Quite precise; can be confused by repetitive environments like long, featureless corridors.
+- **Pros/Cons:**  
+  Reliable over short distances; performance degrades during wheel slippage or on carpet/uneven terrain.
+
+### Ultra-Wideband (UWB)
+
+- **Role:**  
+  Provides absolute $X, Y, Z$ coordinates in the local UWB coordinate frame.
+
+- **Pros:**  
+  Achieves 2–10 cm accuracy; high immunity to multipath interference (distinguishes direct vs. reflected pulses); low power spectral density prevents interference with other radio signals.
+
+- **Cons:**  
+  Performance can degrade in environments with high metallic density or severe non‑line‑of‑sight conditions.
+
+### LiDAR (Light Detection and Ranging)
+
+- **Mechanism:**  
+  Emits laser pulses to measure distances, creating a 360° point cloud of the environment.
+
+- **Role:**  
+  Performs “scan matching” against a known map to determine precise location relative to structural geometry.
+
+- **Pros/Cons:**  
+  Quite precise; can be confused by repetitive environments such as long, feature‑less corridors.
+
+---
 
 ## 2. Sensor Setup
 
 ### 2.1 IMU (Xsens MTi 630)
 
-- Follow this repository https://github.com/xsenssupport/Xsens_MTi_ROS_Driver_and_Ntrip_Client/tree/ros2
+This implementation uses the ROS 2 driver provided in the repository:  
+<https://github.com/xsenssupport/Xsens_MTi_ROS_Driver_and_Ntrip_Client/tree/ros2>
 
 ### 2.2 UWB (Decawave DWM1001)
 
-- This implementation is based on this repository https://github.com/cliansang/uwb-tracking-ros/tree/ros2
-- To set up the UWB system, you can follow the instruction in this repository https://github.com/SeAMKedu/DecawaveUWBwithPython
+This implementation builds on the repository:  
+<https://github.com/cliansang/uwb-tracking-ros/tree/ros2>  
 
-### 2.3 2D Lidar
+The UWB system setup is further configured using helper scripts from:  
+<https://github.com/SeAMKedu/DecawaveUWBwithPython>
 
-- Driver for the RPLidar https://github.com/Slamtec/rplidar_ros/tree/ros2
+### 2.3 2D LiDAR
 
-After install the drivers and required packages, you need to update the launch file in diffdrive package to run all sensors together with the robot.
+- Driver for the RPLidar:  
+  <https://github.com/Slamtec/rplidar_ros/tree/ros2>
+
+After installing the drivers and required packages, the launch file in the `diffdrive` package is updated to run all sensors together with the robot. The built‑in `odom` node is kept only for low‑level wheel‑tick reading; the higher‑level odometry estimate is instead provided by the `robot_localization` package, which follows the ROS standard for multi‑sensor state estimation.
+
+Below is the updated `diffdrive.launch.py` file:
 
 ```python
 import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.actions import IncludeLaunchDescription
+
 
 def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')
 
-    colcon_prefix_path = os.getenv('COLCON_PREFIX_PATH').split("/install")[0]
+    colcon_prefix_path = os.getenv('COLCON_PREFIX_PATH').split("/install")
 
     urdf_file_name = 'robot.urdf'
     urdf = os.path.join(
@@ -92,7 +123,7 @@ def generate_launch_description():
             )
         )
     )
-    
+
     uwb_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(
@@ -108,7 +139,7 @@ def generate_launch_description():
             'use_sim_time',
             default_value='false',
             description='Use simulation (Gazebo) clock if true'),
-            
+
         Node(
             package='robot_state_publisher',
             executable='robot_state_publisher',
@@ -116,15 +147,6 @@ def generate_launch_description():
             output='screen',
             parameters=[{'use_sim_time': use_sim_time, 'robot_description': robot_desc}],
         ),
-
-        # Node(
-        #     package='joint_state_publisher_gui',
-        #     executable='joint_state_publisher_gui',
-        #     name='joint_state_publisher_gui',
-        #     output='screen',
-        #     #namespace = NAMESPACE,
-        #     parameters=[{'use_sim_time': use_sim_time}],
-        # ),
 
         Node(
             package='rviz2',
@@ -135,7 +157,7 @@ def generate_launch_description():
                 '-d',
                 os.path.join(
                     get_package_share_directory('diffdrive'),
-                    'rviz',   # bạn có thể đổi tên nếu khác
+                    'rviz'   # change if the file name is different
                 )
             ],
             parameters=[{'use_sim_time': use_sim_time}],
@@ -145,52 +167,49 @@ def generate_launch_description():
             package='motordriver',
             executable='motordriver',
             name='motordriver_node',
-            #namespace = NAMESPACE,
             output='screen',
             parameters=[os.path.join(
-              colcon_prefix_path,
-              'config',
-              'params.yaml')]
+                colcon_prefix_path,
+                'config',
+                'params.yaml')]
         ),
 
         Node(
             package='diffdrive',
             executable='odom',
             name='odom_node',
-            #namespace = NAMESPACE,
             output='screen',
             parameters=[os.path.join(
-              colcon_prefix_path,
-              'config',
-              'params.yaml')]
-        ),       
-                                
+                colcon_prefix_path,
+                'config',
+                'params.yaml')]
+        ),
+
         Node(
             package='diffdrive',
             executable='cmd_vel',
             name='cmd_vel_node',
-            #namespace = NAMESPACE,
             output='screen',
             parameters=[os.path.join(
-              colcon_prefix_path,
-              'config',
-              'params.yaml')]
+                colcon_prefix_path,
+                'config',
+                'params.yaml')]
         ),
-        
+
         xsens_launch,
         uwb_launch,
         ekf_launch,
     ])
-
-
 ```
 
-After running the robot, the data from sensors will be published to their own topic
+After running the robot, the data from the sensors is published to their own topics:
 
-- IMU: topic imu/data (Message Type: nav_msgs/msg/Imu)
-- UWB: topic dwm1001/id_DW878F/pose (Message Type: geometry_msgs/msg/PoseWithCovarianceStamped)
+- IMU: topic `/imu/data`  
+  Message type: `sensor_msgs/msg/Imu`
+- UWB: topic `/dwm1001/id_DW878F/pose`  
+  Message type: `geometry_msgs/msg/PoseWithCovarianceStamped`
 
-##### Compile and source workspace
+#### Compile and source workspace
 
 ```bash
 cd ~/ros2_ws
@@ -198,20 +217,22 @@ colcon build --symlink-install
 source ~/ros2_ws/install/setup.bash
 ```
 
-## 3. Robot_localization package
+---
 
-robot_localization is a collection of state estimation nodes, each of which is an implementation of a nonlinear state estimator for robots moving in 3D space.
+## 3. Robot_localization Package
+
+`robot_localization` is a collection of state estimation nodes, each of which implements a nonlinear state estimator for robots moving in 3D space. In this setup, it replaces the simple wheel‑based odometry with a dual‑EKF configuration that follows ROS best practices for multi‑sensor localization.
 
 ### 3.1 Installation
 
-To install the package for ROS2, run the following command in your terminal:
+To install the package for ROS 2, run:
 
 ```bash
 sudo apt update
 sudo apt install ros-${ROS_DISTRO}-robot-localization
 ```
 
-And then, you should create a package for localization for more easily configuration by executing command
+Next, a dedicated localization package is created for easier configuration:
 
 ```bash
 cd ~/ros2_ws/src/
@@ -225,7 +246,7 @@ cd ~/ros2_ws/src/sebot_localization/config/
 touch ekf_dual.yaml
 ```
 
-And then add this to the yaml file:
+Add the following configuration to the YAML file:
 
 ```yaml
 ekf_filter_node_local:
@@ -291,35 +312,58 @@ ekf_filter_node_global:
     initial_estimate_covariance: []
 ```
 
-In this yaml file, you should adjust the value of each parameter according to your system, especially the process_noise_covariance and initial_estimate_covariance to get better localization result. The instructions and explaination about all parameters can be found in this repository https://github.com/cra-ros-pkg/robot_localization
+Each parameter should be adjusted according to the specific robot and sensor configuration, especially `process_noise_covariance` and `initial_estimate_covariance`, to achieve better localization performance. The official documentation and parameter explanation for `robot_localization` can be found in the repository:  
+<https://github.com/cra-ros-pkg/robot_localization>
+
+#### Disable TF of wheel_odom node
+
+The simple wheel‑based odometry node in the `diffdrive` package is kept only for reading raw wheel‑tick data and converting it into a basic `Odometry` message. The higher‑level state estimation and `map -> odom -> base_link` transforms are instead handled by the `robot_localization` package, which is the ROS standard solution for multi‑sensor fusion (e.g., wheel encoders, IMU, and UWB). Therefore, disable the `tf_broadcaster` in the odom node to avoid the TF conflict between it and robot_localization estimate node. This approach provides a more robust, consistent, and configurable localization pipeline that can properly integrate noisy or intermittent sensor data.
 
 #### Understanding Covariance Tuning
 
-To achieve optimal results, you must tune the Process Noise Covariance. This matrix represents the uncertainty in your robot's motion model.
+To achieve optimal results, the process noise covariance must be tuned. This matrix represents the uncertainty in the robot’s motion model.
 
-- Lower values in the diagonal (e.g., 1e-5) tell the EKF to trust the robot's predicted path more (resulting in smoother but slower-to-correct motion).
-- Higher values (e.g., 1e-2) make the EKF more reactive to sensor measurements like UWB, which is good for quick corrections but can introduce jitter if the sensors are noisy.
+- Lower values on the diagonal (e.g., 1e‑5) indicate that the EKF trusts the predicted motion more, which results in smoother but slower‑to‑correct behavior.
+- Higher values (e.g., 1e‑2) make the EKF more reactive to sensor measurements such as UWB, which is useful for quick corrections but can introduce jitter if the sensor data is noisy.
 
-Sensor Configuration Logic
+##### Sensor Configuration Logic
 
-- IMU: We set only Yaw, Angular Velocity Z to true. Using Roll and Pitch is unnecessary for 2D ground robots and often introduces noise.
-- UWB: We set only X and Y to true. Since UWB doesn't provide reliable heading (orientation), we let the IMU handle the yaw while UWB fixes the global position.
+- **IMU:** Only yaw and angular velocity are fused in the EKF. Roll and pitch are disabled because they are generally unnecessary for 2D ground robots and can introduce noise.
+- **UWB:** Only X and Y positions are used. Since UWB typically does not provide reliable orientation estimates, the IMU is responsible for yaw, while UWB corrects the global position.
 
-### 3.3 Transformation between frames
+### 3.3 Transformation Between Frames
 
-In a multi-sensor system, each sensor operates in its own Local Frame. For the EKF to mathematically fuse data from UWB, every measurement must be translated into a unified Global Frame (the map frame).
+In a multi‑sensor system, each sensor operates in its own local frame. For the EKF to mathematically fuse the UWB measurements, all data must be expressed in a unified global frame, typically the `map` frame.
 
 #### How the Transformation is Implemented
 
-- In this project, the transformation is handled by the uwb_transform_dual_ekf_node. You can read more about it in this LINK or you can find code in the path **ros2_ws/src/sebot_localization/uwb_transform_dual_ekf.cpp**
+The transformation from the UWB frame into the `map` frame is handled by a custom ROS 2 node called `UwbTransformNode`. The implementation is available in the file:
 
-- The transformed data is re-published as a nav_msgs/msg/Odometry message on the topic odometry/uwb_data. This message is now "Map-aligned," allowing the ekf_filter_node_global to fuse it directly with other sources.
+`~/ros2_ws/src/sebot_localization/src/uwb_transform_dual_ekf.cpp`
 
-### 3.4 Last step
+This node:
 
-Now we will deal with the files `package.xml`, which contains the package description definition, and `CMakeLists.txt`, which contains the compilation settings.
+- subscribes to:
+  - the UWB pose topic (`/dwm1001/id_DW878F/pose`),
+  - and the IMU topic (`imu/data`);
 
-**~/ros2_ws/src/sebot_localization/package.xml**
+- uses a short history of IMU messages to interpolate the robot’s yaw at the UWB timestamp;
+
+- computes an initial datum using the first `sample_threshold_` UWB position and averaged IMU yaw;
+
+- applies the static offset between the UWB tag and the robot’s base link (defined in TF as `uwb_link` → `base_link`) in the robot’s current orientation;  
+
+- then rotates and translates the UWB position into the `map` frame using the stored `pos0_uwb_` and `yaw0_`;
+
+- finally publishes the result as an `Odometry` message on the topic `odometry/uwb_data`, with realistic covariance values for x, y, z, and orientation.
+
+Because the transformation logic and parameters are already encapsulated in the node, the YAML configuration for the global EKF only needs to enable x and y from `odometry/uwb_data` and let the node handle the frame‑alignment details.
+
+### 3.4 Last Step: Packaging and Launching
+
+The C++ implementation for the EKF and UWB transformation nodes is grouped into a single package `sebot_localization`. The package metadata and dependencies are defined in `package.xml` and `CMakeLists.txt`.
+
+**`~/ros2_ws/src/sebot_localization/package.xml`**
 
 ```xml
 <?xml version="1.0"?>
@@ -327,7 +371,7 @@ Now we will deal with the files `package.xml`, which contains the package descri
 <package format="3">
   <name>sebot_localization</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>Localization package for dual EKF fusion with IMU, wheel odometry, UWB, and LiDAR.</description>
   <maintainer email="ros2@todo.todo">ros2</maintainer>
   <license>TODO: License declaration</license>
 
@@ -347,11 +391,10 @@ Now we will deal with the files `package.xml`, which contains the package descri
   <export>
     <build_type>ament_cmake</build_type>
   </export>
-
 </package>
 ```
 
-**~/ros2_ws/src/sebot_localization/CMakeLists.txt**
+**`~/ros2_ws/src/sebot_localization/CMakeLists.txt`**
 
 ```txt
 cmake_minimum_required(VERSION 3.8)
@@ -404,7 +447,6 @@ ament_target_dependencies(uwb_transform_dual_ekf_node
 )
 target_link_libraries(uwb_transform_dual_ekf_node Eigen3::Eigen)
 
-
 install(TARGETS
   ekf_node
   uwb_transform_node
@@ -427,7 +469,7 @@ endif()
 ament_package()
 ```
 
-To run the ekf nodes, we need a launch file:
+The EKF nodes are launched via the configuration defined in the shared YAML file and the launch script below:
 
 ```bash
 cd ~/ros2_ws/src/sebot_localization/
@@ -439,9 +481,10 @@ touch ekf_dual.launch.py
 from launch import LaunchDescription
 from launch_ros.actions import Node
 from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import LaunchConfiguration
 from ament_index_python.packages import get_package_share_directory
 import os
+
 
 def generate_launch_description():
     pkg_name = 'sebot_localization'
@@ -452,7 +495,6 @@ def generate_launch_description():
     print(parameters_file_path)
     os.environ['FILE_PATH'] = str(parameters_file_dir)
 
-
     use_sim_time = LaunchConfiguration('use_sim_time')
 
     return LaunchDescription([
@@ -461,7 +503,6 @@ def generate_launch_description():
             default_value='false',
             description='Use simulation clock'),
 
-        ## Static transform to eliminate the offset of sensor to the center of the robot (UWB is placed 5cm to the right of the robot center)
         Node(
             package='tf2_ros',
             executable='static_transform_publisher',
@@ -484,26 +525,9 @@ def generate_launch_description():
             executable='ekf_node',
             name='ekf_filter_node_global',
             output='screen',
-            parameters=[parameters_file_path, {'use_sim_time': use_sim_time}],
-            remappings=[('odometry/filtered', 'odometry/filtered/global')]
-        ),
+            parameters=[parameters_file_path, {'use_sim_time': use_sim_time}]
+        )
 
-        Node(
-            package='sebot_localization',
-            executable='uwb_transform_dual_ekf_node',
-            name='uwb_transform_dual_ekf_node',
-            output='screen',
-            parameters=[{'use_sim_time': use_sim_time}],
-        ),
-
-        Node(
-            package='sebot_localization',
-            executable='ekf_node',
-            name='ekf_node',
-            output='screen',
-            parameters=[{'use_sim_time': use_sim_time}],
-        ),
-    ])
 ```
 
 ![Dual EKF architecture](/images/ekf_architecture.png)
@@ -537,4 +561,3 @@ ros2 bag play ~/ros2?ws/data_ekf/rosbag2_2026_03_02-02_11_23 --topic wheel/odom 
 source ~/ros2_ws/install/setup.bash
 ros2 run diffdrive plot
 ```
-
