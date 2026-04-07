@@ -24,7 +24,7 @@ If you make the circuit board yourself, you may also need the following (or simi
 - [M2.5 screws](https://www.tme.eu/fi/en/details/b2.5x6_bn15857/bolts/bossard/3108702/)
   In addition, suitable wires, LEDs, etc.
 
-![https://i.pinimg.com/originals/6b/b7/9e/6bb79e8a76dcf47cfbf6a1a6f38ac640.png](images/simple.png)
+![https://i.pinimg.com/originals/6b/b7/9e/6bb79e8a76dcf47cfbf6a1a6f38ac640.png](/images/simple.png)
 
 The movement of a two-wheeled robot is based on the operation of the wheel motors, which receive instructions from a higher level. In the ROS environment, these instructions are usually given in cmd_vel messages, which define the robot's linear and angular velocity. Using this information, a ROS node connected to the robot calculates the necessary rotation directions and speeds for each wheel, which are then transmitted to the motor controller.
 
