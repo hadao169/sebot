@@ -2,7 +2,7 @@
 
 ### Overview
 
-![controller and motors](kuvat/yleiskuva.png)
+![controller and motors](/images/yleiskuva.png)
 
 - Raspberry PI 5, [for example from Botland](https://botland.store/raspberry-pi-5-modules-and-kits/23905-raspberry-pi-5-8gb-5056561803326.html). Older Raspberry Pis are also well-suited.
 - [Raspberry power supply](https://botland.store/raspberry-pi-5-power-supply/23906-raspberry-pi-27w-usb-c-power-supply-official-51v-5a-psu-for-raspberry-pi-5-white-5056561803401.html) It's good to keep the robot on mains power during the development phase.
@@ -52,7 +52,7 @@ This system combines ROS environment commands and Arduino-based control, enablin
 
 ### Hardware
 
-![controller and motors](images/device2.png)
+![controller and motors](/images/device2.png)
 
 Arduino Micro, L293D, [DC6-24v Gear Motor with Encoder](https://www.elecrow.com/dc624v-gear-motor-with-encoder-p-1616.html)
 
