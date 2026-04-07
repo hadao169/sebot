@@ -75,7 +75,7 @@ The table below explains the connections between the Arduino Micro, L293D chip, 
 | black      | sensor gnd | Arduino | gnd             |
 | red        | motor +    | L293D   | M#1->6, M#2->14 |
 
-![https://i.pinimg.com/originals/6b/b7/9e/6bb79e8a76dcf47cfbf6a1a6f38ac640.png](images/arduinopins.png) Arduino Micro connections. Red circles indicate used pins.
+![https://i.pinimg.com/originals/6b/b7/9e/6bb79e8a76dcf47cfbf6a1a6f38ac640.png](/images/arduinopins.png) Arduino Micro connections. Red circles indicate used pins.
 
 </td><td>
 
