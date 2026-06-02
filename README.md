@@ -1,17 +1,13 @@
-# SeBot – ROS2 Mobile Robot with Localization & Navigation
+# SeBot
+[![DOI](https://zenodo.org/badge/996823529.svg)](https://doi.org/10.5281/zenodo.17953051)
 
-[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+SeBot-robotin ROS2 ohjelmointiohjeet 28.5.2025 OpenUGV-hankkeen ROS2 mobiilirobotti-työpajaan.
 
-## 📌 Overview
+Varsinaiset ohjeet on kirjoitettu markdown-tiedostoihin. Niiden mukaiset valmiit koodit (ROS2, Arduino ja WWW) löydät repositorion code-kansiosta.
 
-SeBot is a ROS2‑based mobile robot platform featuring **localization** (IMU + UWB least‑squares positioning) and **navigation** capabilities. It uses an Arduino for low‑level motor control and integrates the XSens MTi IMU driver, Decawave DWM1001 UWB module, . The repository provides a complete ROS2 workspace with hardware drivers, estimation nodes, and navigation stacks.
+SeBotia varten on olemassa Rasberry Pi 5:lle sopiva image-tiedosto, jonka voi kirjoittaa MicroSD-muistikortille. Image sisältää valmiin ROS2 ympäristön ja muut tämän harjoituksen kannalta tarpeelliset muut tiedostot ja ohjelmat. Tiedosto on talletettu OpenUGV-hankkeen Teams-ryhmään (vaatii käyttöoikeuden SeAMK:lta). Mikäli sinulla ei ole käytössä tätä image-tiedostoa tai haluat tehdä harjoituksen jollain muulla koneella, voit hyvin asentaa ROS2-ympäristön itse ``apt install``-komennolla Ubuntun pakettijakelun kautta. Ohje tähän löytyy Materiaali 0:sta.
 
-For detailed setup, and usage instructions, please refer to the **[docs](./docs)** folder.
+Jos haluat tulostaa oman SeBot-pohjan, STP-malli ja PDF-mittakuva löytyy SeBot-kansiosta. Huomaa kuitenkin, että tämän harjoituksen kannalta pohjalevyn muoto on hyvin vapaa ja robotin voi rakentaa vaikkapa riittävän tukevaan muovirasiaan.
 
-## 🚀 Key Features
-
-- **Localization**: UWB‑based position estimation using least‑squares method, fused with IMU data.
-- **Navigation**: ROS2 Navigation Stack (Nav2) ready – path planning, obstacle avoidance, and autonomous control.
-- **Hardware Integration**: Arduino motor controller, MTi IMU (XSens), and Decawave UWB modules, 2D Lidar.
 
        
