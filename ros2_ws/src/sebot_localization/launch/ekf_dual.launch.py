@@ -33,44 +33,28 @@ def generate_launch_description():
                        '0', '0', 'base_link', 'uwb_link']
         ),
 
-        # Node(
-        #     package='robot_localization',
-        #     executable='ekf_node',
-        #     name='ekf_filter_node_local',
-        #     output='screen',
-        #     parameters=[parameters_file_path, {'use_sim_time': use_sim_time}],
-        #     remappings=[('odometry/filtered', 'odometry/local')]
-        # ),
-
-        # Node(
-        #     package='robot_localization',
-        #     executable='ekf_node',
-        #     name='ekf_filter_node_global',
-        #     output='screen',
-        #     parameters=[parameters_file_path, {'use_sim_time': use_sim_time}],
-        #     remappings=[('odometry/filtered', 'odometry/global')]
-        # ),
-
         Node(
-            package='sebot_localization',
-            executable='uwb_transform',
-            name='uwb_transform',
+            package='robot_localization',
+            executable='ekf_node',
+            name='ekf_filter_node_local',
             output='screen',
-            parameters=[{'use_sim_time': use_sim_time}],
+            parameters=[parameters_file_path, {'use_sim_time': use_sim_time}],
+            remappings=[('odometry/filtered', 'odometry/local')]
         ),
 
-        # Node(
-        #     package='sebot_localization',
-        #     executable='uwb_transform_dual_ekf_node',
-        #     name='uwb_transform_dual_ekf_node',
-        #     output='screen',
-        #     parameters=[{'use_sim_time': use_sim_time}],
-        # ),
+        Node(
+            package='robot_localization',
+            executable='ekf_node',
+            name='ekf_filter_node_global',
+            output='screen',
+            parameters=[parameters_file_path, {'use_sim_time': use_sim_time}],
+            remappings=[('odometry/filtered', 'odometry/global')]
+        ),
 
         Node(
             package='sebot_localization',
-            executable='ekf_node',
-            name='ekf_node',
+            executable='uwb_transform_dual_ekf_node',
+            name='uwb_transform_dual_ekf_node',
             output='screen',
             parameters=[{'use_sim_time': use_sim_time}],
         ),
