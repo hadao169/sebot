@@ -8,8 +8,10 @@ from .dwm1001_apiCommands import DWM1001_API_COMMANDS
 # from geometry_msgs.msg import PoseStamped
 # from .KalmanFilter import KalmanFilter as kf
 from .Helpers import get_tag_publisher, update_multitags_list, create_pose_stamped, CsvLogger
-from .LeastSquare import LeastSquare as ls
+from .uwb_processor import UWBProcessor
+from nav_msgs.msg import Odometry
 from citrack_ros_msgs.msg import CustomTag
+import re
 # import traceback
 
 class dwm1001_localizer(Node):
@@ -48,6 +50,14 @@ class dwm1001_localizer(Node):
             'least_square_max_iterations').get_parameter_value().integer_value
         self.least_square_tolerance = self.get_parameter(
             'least_square_tolerance').get_parameter_value().double_value
+
+        self.uwb_processor = UWBProcessor()
+
+        self.anchor_pattern = re.compile(
+            r"([0-9A-F]{4})\[\s*([-0-9.]+),\s*([-0-9.]+),\s*([-0-9.]+)\]\s*=\s*([-0-9.]+)"
+        )
+
+        self.pub_fix = self.create_publisher(Odometry, "uwb/fix", 10)
 
         timer_period = 1.0 / self.read_rate
         self.serialPortDWM1001 = serial.Serial(
@@ -125,45 +135,56 @@ class dwm1001_localizer(Node):
 
     def serial_read_callback(self):
         try:
-            serialReadLine = self.serialPortDWM1001.readline()
-            # self.get_logger().info(serialReadLine.decode('UTF-8'))
-            if not serialReadLine:
+            line = self.serialPortDWM1001.readline().decode('utf-8').strip()
+            if not line:
                 return
-            pose_data = self._extract_pose_data(serialReadLine)
-            if self.use_least_square:
-                    self.publishTagPoseLS(self.tag_id, self.tag_macID, serialReadLine, pose_data)
-            if pose_data and not self.use_least_square:
-                self.publishTagPositions(pose_data)
-        except Exception:
-            pass
+            # DEBUG (rất nên bật lúc đầu)
+            self.get_logger().info(line)
+            matches = self.anchor_pattern.findall(line)
 
-    def publishTagPoseLS(self, tag_id: int, tag_macID: str, serialReadLine, pose_data):
-        serialReadLine_str = serialReadLine.decode('UTF-8', errors='ignore')
-        raw_uwb_data = serialReadLine_str.strip().split() # ['A1[...]=...', 'A2[...]=...', ...]
-        # self.logger.log_raw(raw_uwb_data)
+            if self.use_least_square and len(matches) >= 4:
 
-        if tag_macID not in self.topics_ls:
-            self.topics_ls[tag_macID] = ls()
+                anchor_ids = []
+                anchors = []
+                distances = []
 
-        ls_object = self.topics_ls[tag_macID]
+                for m in matches:
+                    anchor_ids.append(m[0])
+                    anchors.append([
+                        float(m[1]),
+                        float(m[2]),
+                        float(m[3])
+                    ])
+                    distances.append(float(m[4]))
 
-        ls_object.process_uwb_data(raw_uwb_data)
+                pos = self.uwb_processor.process(anchor_ids, anchors, distances)
 
-        estimated_x, estimated_y = ls_object.estimate_position(
-                max_iterations=self.least_square_max_iterations, tolerance=self.least_square_tolerance)
-        
-        pos = ls_object.original_position
+                if pos is not None:
+                    self.publishTagPoseLS(pos)
 
-        self.get_logger().info(f"[LS] Estimated: x={estimated_x}, y={estimated_y}")
+            # fallback: dùng est từ hardware
+            elif not self.use_least_square:
+                pose_data = self._extract_pose_data(line.encode())
+                if pose_data:
+                    self.publishTagPositions(pose_data)
 
+        except Exception as e:
+            self.get_logger().error(f"Serial error: {e}")
 
-        xyz = [estimated_x, estimated_y, 0.0]
-        ps = create_pose_stamped(self, xyz, tag_macID)
-        clean_id_str = tag_macID.replace(':', '_')
+    def publishTagPoseLS(self, pos):
 
-        pub = get_tag_publisher(self, self.topics_ls, clean_id_str, suffix="pose_ls")
+        msg = Odometry()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.header.frame_id = "map"
+        msg.child_frame_id = "base_link"
 
-        pub.publish(ps)
+        msg.pose.pose.position.x = float(pos[0])
+        msg.pose.pose.position.y = float(pos[1])
+        msg.pose.pose.position.z = float(pos[2])
+
+        msg.pose.pose.orientation.w = 1.0
+
+        self.pub_fix.publish(msg)        
         
 
     def publishTagPositions(self, pose_data: list):
@@ -182,10 +203,6 @@ class dwm1001_localizer(Node):
         pub = get_tag_publisher(
             self, self.topics, self.tag_id, suffix="pose")
         pub.publish(ps)
-
-        update_multitags_list(self.multipleTags, tag, self.tag_macID)
-
-        self.pub_tags.publish(self.multipleTags)
 
 
 def main(args=None):

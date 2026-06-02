@@ -149,7 +149,7 @@ class OdomNode(Node):
         t.transform.rotation.z = quat[2]
         t.transform.rotation.w = quat[3]
 
-        # self.tf_broadcaster.sendTransform(t)
+        self.tf_broadcaster.sendTransform(t)
 
         # if self.log_filename:
         #     try:

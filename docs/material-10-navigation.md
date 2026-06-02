@@ -209,7 +209,6 @@ This system runs on a **Raspberry Pi 5**, which introduces hardware-related cons
 
 These limitations are documented here so that users understand that the chosen configuration (including reduced Nav2 node frequencies) is a **hardware-driven trade-off**, not a software design flaw.
 
-## 10. Video demo
 
-!!! Will be added soon
+
  

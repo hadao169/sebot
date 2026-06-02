@@ -18,7 +18,7 @@ def generate_launch_description():
     urdf_file_name = 'robot.urdf'
     urdf = os.path.join(
         colcon_prefix_path,
-        'config',
+        'ros2_ws/config',
         urdf_file_name)
     with open(urdf, 'r') as infp:
         robot_desc = infp.read()
@@ -42,6 +42,15 @@ def generate_launch_description():
                 get_package_share_directory('sebot_localization'),
                 'launch',
                 'ekf.launch.py'
+            )
+        )
+    )
+    uwb_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory('uwb_tracking_ros2'),
+                'launch',
+                'uwb_tracking_dwm1001.launch.py'
             )
         )
     )
@@ -142,7 +151,9 @@ def generate_launch_description():
               'config',
               'params.yaml')]
         ),
-        # xsens_launch,
-        # ekf_launch,
+        xsens_launch,
+        ekf_launch,
+        uwb_launch,
+
     ])
 

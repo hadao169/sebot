@@ -48,16 +48,29 @@ ament_target_dependencies(uwb_transform
 )
 target_link_libraries(uwb_transform Eigen3::Eigen)
 
+add_executable(ukf_node src/ukf_node.cpp)
+target_include_directories(uwb_transform PRIVATE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  ${Eigen3_INCLUDE_DIRS}
+)
+ament_target_dependencies(ukf_node
+  rclcpp
+  nav_msgs
+  sensor_msgs
+  tf2
+  tf2_geometry_msgs
+)
 
-install(TARGETS 
+install(TARGETS
   ekf_node
   uwb_transform_dual_ekf_node
   uwb_transform
+  ukf_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
 install(
-  DIRECTORY launch config 
+  DIRECTORY launch config
   DESTINATION share/${PROJECT_NAME}
 )
 

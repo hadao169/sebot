@@ -85,10 +85,11 @@
   <joint name="base_to_uwb_link" type="fixed">
     <parent link="base_link"/>
     <child link="uwb_link"/>
-    <origin xyz="0 -0.2 0.0665" rpy="0 0 0"/>
+    <origin xyz="0 -0.05 0.0665" rpy="0 0 0"/>
   </joint>
+</robot>
 
-  <link name="laser">
+  <!-- <link name="laser">
     <visual>
       <geometry>
         <cylinder length="0.05" radius="0.03"/>
@@ -103,6 +104,4 @@
     <parent link="base_link"/>
     <child link="laser"/>
     <origin xyz="0.1 0 0.08" rpy="0 0 0"/>
-  </joint>
-
-</robot>
+  </joint> -->

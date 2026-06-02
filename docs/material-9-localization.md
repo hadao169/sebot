@@ -555,7 +555,7 @@ There is a data file obtained by using this system, you can take a look at how t
 ```bash
 # Open the first terminal
 # Replay the bag data file with rosbag
-ros2 bag play ~/ros2?ws/data_ekf/rosbag2_2026_03_02-02_11_23 --topic wheel/odom odometry/uwb_data odometry/filtered/local odometry/filtered/global
+ros2 bag play ~/ros2_ws/data_ekf/rosbag2_2026_03_02-01_52_26 --topic wheel/odom odometry/uwb_data odometry/filtered/local odometry/filtered/global
 
 # Open the second terminal
 source ~/ros2_ws/install/setup.bash

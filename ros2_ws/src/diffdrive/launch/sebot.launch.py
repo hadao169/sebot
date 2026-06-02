@@ -15,7 +15,7 @@ def generate_launch_description():
     urdf_file_name = 'robot.urdf'
     urdf = os.path.join(
         colcon_prefix_path,
-        'config',
+        'ros2_ws/config',
         urdf_file_name)
     with open(urdf, 'r') as infp:
         robot_desc = infp.read()

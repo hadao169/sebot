@@ -29,15 +29,15 @@ public:
         
         // Process noise covariance
         Qk = Eigen::Matrix4d::Zero();
-        Qk(0, 0) = 0.0001;
-        Qk(1, 1) = 0.0001;
-        Qk(2, 2) = 0.0001;
-        Qk(3, 3) = 0.005;
+        Qk << 0.0001, 0,      0,      0,
+              0,      0.0001, 0,      0,
+              0,      0,      0.0001, 0,
+              0,      0,      0,      0.005;  
 
         // Measurement noise covariance
         R_config = Eigen::MatrixXd::Zero(4, 4);
-        R_config << 0.1, 0,    0,      0,
-                    0,    0.1, 0,      0,
+        R_config << 0.5, 0,    0,      0,
+                    0,    0.5, 0,      0,
                     0,    0,    0.0003, 0,
                     0,    0,    0,      0.01; 
 

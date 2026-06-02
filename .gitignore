@@ -50,4 +50,10 @@ build
 install
 log
 venv_osmnx/
+venv_ekf/
 .vscode/
+bag_to_txt.py
+ekf_data_freepath.txt
+ekf_data_square.txt
+plot.py
+

@@ -28,7 +28,9 @@ setup(
             'odom = diffdrive.odom:main',
             'cmd_vel = diffdrive.cmd_vel:main',
             'plot = diffdrive.plot:main',
-            'transform = diffdrive.transform:main'
+            'transform = diffdrive.transform:main',
+            'move_trajectory = diffdrive.move_trajectory:main',
+            'uwb_publisher=diffdrive.UWBpublisher:main'
         ],
     },
 )
