@@ -96,14 +96,6 @@ def generate_launch_description():
             parameters=[{'use_sim_time': use_sim_time}],
         ),
 
-#       Node(
-#            package='tf2_web_republisher_py',
-#            executable='tf2_web_republisher',
-#            name='tf2_web_republisher',
-#            #namespace = NAMESPACE,
-#            output='screen',
-#       ),
-
         Node(
             package='motordriver',
             executable='motordriver',
@@ -127,18 +119,6 @@ def generate_launch_description():
               'config',
               'params.yaml')]
         ),
-
-        # Node(
-        #     package='diffdrive',
-        #     executable='odom_imu',
-        #     name='odom_imu_node',
-        #     #namespace = NAMESPACE,
-        #     output='screen',
-        #     parameters=[os.path.join(
-        #       colcon_prefix_path,
-        #       'config',
-        #       'params.yaml')]
-        # ),
         
         Node(
             package='diffdrive',

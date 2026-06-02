@@ -503,6 +503,7 @@ def generate_launch_description():
             default_value='false',
             description='Use simulation clock'),
 
+        ## Physical offset between UWB tag and center of the robot (remember to adjust accordingly)
         Node(
             package='tf2_ros',
             executable='static_transform_publisher',

@@ -30,7 +30,7 @@ class dwm1001_localizer(Node):
         self.declare_parameter('read_rate', 10.0)
         self.declare_parameter('tag_id', '0xDECAC2066165878F')
         self.declare_parameter('mac_id', 'C4:22:04:B9:DE:53')
-        self.declare_parameter('use_least_square', True)
+        self.declare_parameter('use_least_square', False)
         self.declare_parameter('least_square_max_iterations', 20)
         self.declare_parameter('least_square_tolerance', 0.001)
 
